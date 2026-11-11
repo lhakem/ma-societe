@@ -2,6 +2,7 @@
 
 - **Public website**: pre-rendered static pages served by Cloudflare (fast, SEO-friendly).
 - **Admin dashboard** at `/admin`: client tracking (suivi client), quotes (devis) and invoices (factures). Runs in a **Cloudflare Worker** with a **Cloudflare D1** database.
+- **Live**: https://masociete.lhakem3chine.workers.dev (Worker `masociete`, D1 `masociete`, secrets already set). Repo: https://github.com/lhakem/ma-societe
 
 ## Run it locally
 
@@ -49,7 +50,7 @@ Manual deploy from your computer (optional): `npm run deploy`.
 **Security**: signed HttpOnly session cookie, login limited to 5 failed attempts per 15 minutes, cross-site form posts blocked, admin pages `noindex` and not cacheable.
 
 ### Backups
-D1 keeps 30 days of history: **Time Travel** lets you restore the database to any minute (`npx wrangler d1 time-travel restore masociete --timestamp=...`). In addition:
+D1 keeps 7 days of history on the free plan (30 days on Workers Paid): **Time Travel** lets you restore the database to any minute (`npx wrangler d1 time-travel restore masociete --timestamp=...`). In addition:
 - **Paramètres → Télécharger une sauvegarde** (JSON of every table)
 - or `npx wrangler d1 export masociete --remote --output=backup.sql`
 
