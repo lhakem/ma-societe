@@ -1,0 +1,437 @@
+---
+/** Page de suivi personnelle du client (lien secret envoyé par WhatsApp). */
+export const prerender = false;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { getClientByToken, clientVisibleDocuments, stepDates } from '../../lib/db';
+import { stepsFor } from '../../config/admin';
+import { site, whatsappLink } from '../../config/site';
+import { mad, fmtDate } from '../../lib/money';
+
+// Page privée : jamais en cache, jamais indexée, le lien n'est pas transmis aux sites externes
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+const token = Astro.params.token ?? '';
+const client = await getClientByToken(token);
+if (!client) Astro.response.status = 404;
+
+const publicStatus: Record<string, { label: string; tone: string }> = {
+  nouveau: { label: 'Demande reçue', tone: 'brand' },
+  devis: { label: 'Devis envoyé', tone: 'saffron' },
+  en_cours: { label: 'En cours', tone: 'mint' },
+  termine: { label: 'Terminé', tone: 'done' },
+  perdu: { label: 'Dossier clôturé', tone: 'grey' },
+};
+
+const steps = client ? stepsFor(client.service) : [];
+const [docs, dates] = client ? await Promise.all([clientVisibleDocuments(client.id), stepDates(client.id)]) : [[], new Map()];
+const done = client ? Math.min(client.step, steps.length) : 0;
+const pct = steps.length ? Math.round((done / steps.length) * 100) : 0;
+const st = client ? publicStatus[client.status] ?? publicStatus.nouveau : publicStatus.nouveau;
+const firstName = client?.name.split(' ')[0] ?? '';
+const docStatus = (type: string, status: string) =>
+  type === 'devis'
+    ? status === 'accepte' ? 'Accepté' : 'À valider'
+    : status === 'payee' ? 'Réglée' : status === 'partielle' ? 'Réglée en partie' : 'À régler';
+const waText = client ? `Bonjour, je suis ${client.name}. J’ai une question sur mon dossier (${client.service ?? 'suivi'}).` : undefined;
+---
+
+<BaseLayout
+  title={client ? 'Suivi de votre dossier' : 'Lien de suivi invalide'}
+  description="Espace de suivi client Ma Société."
+  noindex
+  waText={waText}>
+  <section class="track pattern-bg">
+    <div class="container container--narrow">
+      {
+        !client ? (
+          <div class="card invalid">
+            <Icon name="lock" size={28} />
+            <h1>Ce lien de suivi n’est pas valide</h1>
+            <p class="muted">
+              Il a peut-être été renouvelé par votre conseiller. Demandez-nous votre nouveau lien, nous vous l’envoyons
+              tout de suite.
+            </p>
+            <div class="btn-row mt-3">
+              <a class="btn btn--wa" href={whatsappLink('Bonjour, mon lien de suivi ne fonctionne plus. Pouvez-vous me renvoyer le nouveau lien ?')} target="_blank" rel="noopener">
+                <Icon name="whatsapp" />Demander mon lien
+              </a>
+              <a class="btn btn--ghost" href={`tel:${site.phoneE164}`}><Icon name="phone" />{site.phoneDisplay}</a>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p class="eyebrow">Espace client · Suivi de dossier</p>
+            <h1>Bonjour {firstName},</h1>
+            <p class="lead">
+              Voici l’avancement de votre dossier <strong>{client.service ?? 'en cours'}</strong>{client.company && <> pour <strong>{client.company}</strong></>}.
+              Cette page se met à jour à chaque étape.
+            </p>
+
+            <article class="tracker" aria-label="Avancement du dossier">
+              <div class="tr-head">
+                <div>
+                  <p class="tr-kicker">Votre dossier</p>
+                  <p class="tr-name">{client.company || client.name}{client.service && ` · ${client.service}`}</p>
+                </div>
+                <span class={`pill pill--${st.tone}`}>
+                  {client.status === 'en_cours' && <span class="live" />}
+                  {st.label}
+                </span>
+              </div>
+              <div class="tr-progress">
+                <div class="tr-bar"><span style={`width:${pct}%`} /></div>
+                <span class="tr-pct">{pct} %</span>
+              </div>
+
+              {client.step === 0 && client.status !== 'perdu' && (
+                <p class="tr-info">
+                  <Icon name="info" size={18} />
+                  Votre demande est bien enregistrée. Votre conseiller vous contacte pour lancer le dossier : les étapes
+                  s’afficheront ici au fur et à mesure.
+                </p>
+              )}
+
+              <ol class="tr-steps">
+                {steps.map((s, i) => {
+                  const isDone = i < done;
+                  const isCurrent = i === done && client.status !== 'perdu' && client.status !== 'termine';
+                  return (
+                    <li class:list={{ done: isDone, active: isCurrent }}>
+                      <span class="dot">{isDone && <Icon name="check" size={13} />}</span>
+                      <div>
+                        <strong>{s}</strong>
+                        <small>{isDone ? 'Terminé' : isCurrent ? 'En cours de traitement' : 'À venir'}</small>
+                      </div>
+                      <time>{isDone && dates.get(s) ? fmtDate(dates.get(s)) : isCurrent ? 'En cours' : ''}</time>
+                    </li>
+                  );
+                })}
+              </ol>
+              <p class="tr-updated">Dernière mise à jour : {fmtDate(client.updated_at)}</p>
+            </article>
+
+            {docs.length > 0 && (
+              <section class="card docs" aria-labelledby="docs-title">
+                <h2 id="docs-title">Vos documents</h2>
+                <ul>
+                  {docs.map((d) => (
+                    <li>
+                      <span class="icon-tile">
+                        <Icon name="file" />
+                      </span>
+                      <span class="d-main">
+                        <strong>{d.type === 'devis' ? 'Devis' : 'Facture'} {d.number}</strong>
+                        <small>
+                          {fmtDate(d.issue_date)} · {mad(d.total_ttc)} TTC
+                          {d.type === 'facture' && d.status === 'partielle' && ` · reste ${mad(d.total_ttc - d.paid)}`}
+                        </small>
+                      </span>
+                      <span class:list={['d-status', { ok: ['accepte', 'payee'].includes(d.status) }]}>{docStatus(d.type, d.status)}</span>
+                      <a class="btn btn--ghost btn--xs" href={`/suivi/${token}/document/${d.id}/`}>Voir / PDF</a>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            <section class="card help">
+              <div>
+                <h2>Une question sur votre dossier ?</h2>
+                <p class="muted">Votre conseiller vous répond en {site.responseTime}, du lundi au samedi.</p>
+              </div>
+              <div class="btn-row">
+                <a class="btn btn--wa" href={whatsappLink(waText)} target="_blank" rel="noopener"><Icon name="whatsapp" />WhatsApp</a>
+                <a class="btn btn--ghost" href={`tel:${site.phoneE164}`}><Icon name="phone" />{site.phoneDisplay}</a>
+              </div>
+            </section>
+            <p class="private small muted"><Icon name="lock" size={14} /> Ce lien est personnel : ne le partagez qu’avec les personnes concernées par votre dossier.</p>
+          </>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .track {
+    padding: clamp(32px, 5vw, 64px) 0 clamp(56px, 7vw, 96px);
+  }
+  h1 {
+    margin-top: 12px;
+    font-size: clamp(2rem, 1.5rem + 2vw, 2.8rem);
+  }
+  .lead {
+    margin-top: 12px;
+  }
+  .lead strong {
+    color: var(--ink-900);
+  }
+  .tracker,
+  .card {
+    margin-top: 24px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: clamp(20px, 3vw, 28px);
+  }
+  .tracker {
+    box-shadow: var(--shadow-lg);
+  }
+  .tr-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .tr-kicker {
+    font-size: 0.78rem;
+    color: var(--ink-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .tr-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--ink-900);
+    margin-top: 2px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pill--brand { background: var(--brand-50); color: var(--brand-700); }
+  .pill--saffron { background: var(--saffron-soft); color: #7a4a00; }
+  .pill--mint { background: var(--mint-soft); color: var(--mint); }
+  .pill--done { background: var(--brand-500); color: #fff; }
+  .pill--grey { background: var(--sand-100); color: var(--ink-500); }
+  .live {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--mint);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    50% { opacity: 0.35; }
+  }
+  .tr-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .tr-bar {
+    flex: 1;
+    height: 8px;
+    border-radius: 99px;
+    background: var(--sand-100);
+    overflow: hidden;
+  }
+  .tr-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--brand-500), #6d80f5);
+  }
+  .tr-pct {
+    font-weight: 700;
+    color: var(--brand-600);
+    font-size: 0.9rem;
+  }
+  .tr-info {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--brand-50);
+    color: var(--brand-700);
+    font-size: 0.92rem;
+  }
+  .tr-info :global(svg) {
+    flex: none;
+    margin-top: 2px;
+  }
+  .tr-steps {
+    list-style: none;
+    padding: 0;
+    margin-top: 18px;
+    display: grid;
+    gap: 2px;
+  }
+  .tr-steps li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 0;
+  }
+  .tr-steps li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 38px;
+    bottom: -12px;
+    width: 2px;
+    background: var(--line);
+  }
+  .tr-steps li.done:not(:last-child)::after {
+    background: var(--brand-200);
+  }
+  .dot {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--line-strong);
+    background: var(--white);
+    color: #fff;
+  }
+  .done .dot {
+    background: var(--brand-500);
+    border-color: var(--brand-500);
+  }
+  .active .dot {
+    border-color: var(--saffron);
+    box-shadow: 0 0 0 5px var(--saffron-soft);
+  }
+  .active .dot::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--saffron);
+  }
+  .tr-steps strong {
+    display: block;
+    font-size: 0.97rem;
+    color: var(--ink-900);
+    font-weight: 600;
+  }
+  .tr-steps li:not(.done):not(.active) strong {
+    color: var(--ink-500);
+  }
+  .tr-steps small {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--ink-500);
+  }
+  .tr-steps time {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink-400);
+    white-space: nowrap;
+  }
+  .tr-steps .active time {
+    color: #9a6200;
+  }
+  .tr-updated {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem;
+    color: var(--ink-500);
+  }
+  .card h2 {
+    font-size: 1.25rem;
+  }
+  .docs ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 14px;
+    display: grid;
+  }
+  .docs li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+  }
+  .d-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .d-main strong {
+    display: block;
+    color: var(--ink-900);
+  }
+  .d-main small {
+    color: var(--ink-500);
+    font-size: 0.85rem;
+  }
+  .d-status {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: var(--saffron-soft);
+    color: #7a4a00;
+    white-space: nowrap;
+  }
+  .d-status.ok {
+    background: var(--mint-soft);
+    color: var(--mint);
+  }
+  .btn--xs {
+    min-height: 36px;
+    padding: 0.45em 0.9em;
+    font-size: 0.85rem;
+  }
+  .help {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--sand-100);
+    border-color: transparent;
+  }
+  .private {
+    margin-top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+  }
+  .invalid {
+    text-align: center;
+    padding: 40px 24px;
+  }
+  .invalid :global(svg) {
+    margin: 0 auto;
+    color: var(--brand-500);
+  }
+  .invalid h1 {
+    font-size: 1.6rem;
+  }
+  .invalid .btn-row {
+    justify-content: center;
+  }
+  @media (max-width: 560px) {
+    .docs li {
+      flex-wrap: wrap;
+    }
+    .docs .icon-tile {
+      display: none;
+    }
+    .d-main {
+      flex-basis: 100%;
+    }
+  }
+</style>

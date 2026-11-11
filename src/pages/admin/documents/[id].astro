@@ -5,8 +5,9 @@ import DocEditor from '../../../components/admin/DocEditor.astro';
 import Icon from '../../../components/Icon.astro';
 import {
   clientOptions, getDocument, updateDocument, setDevisStatus, convertToFacture, issueFacture, addPayment, deletePayment,
-  cancelFacture, deleteDocument, getSettings, isEditable, getClient,
+  cancelFacture, deleteDocument, getSettings, isEditable, getClient, ensureShareToken, isVisibleToClient, type Doc, type Client,
 } from '../../../lib/db';
+import { trackingDocUrl, trackingUrl, waLink } from '../../../lib/share';
 import { linesFromForm, isYmd, go } from '../../../lib/forms';
 import { statusOf, paymentMethods } from '../../../config/admin';
 import { computeTotals, lineTotal } from '../../../lib/totals';
@@ -18,6 +19,23 @@ const self = `/admin/documents/${id}/`;
 let full = Number.isInteger(id) ? await getDocument(id) : undefined;
 if (!full) return Astro.redirect(go('/admin/documents/', { err: 'Document introuvable.' }));
 const settings = await getSettings();
+
+/** Message WhatsApp avec le lien direct vers le document (consultable/téléchargeable par le client). */
+const docMessage = (d: Doc, c: Client, token: string) => {
+  const rest = d.total_ttc - d.paid;
+  const kind = d.type === 'devis' ? 'votre devis' : 'votre facture';
+  const amount = (n: number) => mad(n).replace(/ /g, ' ');
+  return [
+    `Bonjour ${c.name.split(' ')[0]}, voici ${kind} ${d.number} d’un montant de ${amount(d.total_ttc)} TTC :`,
+    trackingDocUrl(Astro.url.origin, token, d.id),
+    d.type === 'facture' && rest > 0 && d.status !== 'payee' ? `Reste à régler : ${amount(rest)}.` : '',
+    '',
+    `Le suivi de votre dossier : ${trackingUrl(Astro.url.origin, token)}`,
+    `— ${site.name}`,
+  ]
+    .filter((l, i) => l !== '' || i === 3)
+    .join('\n');
+};
 
 if (Astro.request.method === 'POST') {
   const fd = await Astro.request.formData();
@@ -74,6 +92,15 @@ if (Astro.request.method === 'POST') {
         await cancelFacture(id, reason);
         return Astro.redirect(go(self, { ok: 'Facture annulée.' }));
       }
+      case 'share_wa': {
+        // Un devis encore en brouillon passe en « Envoyé » : il devient visible par le client
+        if (full.doc.type === 'devis' && full.doc.status === 'brouillon') await setDevisStatus(id, 'envoye');
+        const fresh = (await getDocument(id))!;
+        if (!isVisibleToClient(fresh.doc)) throw new Error('Émettez d’abord la facture pour pouvoir l’envoyer.');
+        const href = waLink(fresh.client.phone, docMessage(fresh.doc, fresh.client, await ensureShareToken(fresh.client)));
+        if (!href) throw new Error('Ajoutez un numéro de téléphone valide sur la fiche du client.');
+        return Astro.redirect(href);
+      }
       case 'delete': {
         const clientId = full.doc.client_id;
         if (!(await deleteDocument(id))) throw new Error('Une facture émise ne peut pas être supprimée (vous pouvez l’annuler).');
@@ -95,20 +122,28 @@ const title = `${label} ${doc.number ?? '(brouillon)'}`;
 const clients = editable ? await clientOptions() : [];
 const remaining = doc.total_ttc - doc.paid;
 
-const waNumber = (() => {
-  let d = (client.phone ?? '').replace(/\D/g, '');
-  if (d.startsWith('00')) d = d.slice(2);
-  if (d.length === 10 && d.startsWith('0')) d = '212' + d.slice(1);
-  return d.length >= 11 ? d : '';
-})();
-const waText = `Bonjour ${client.name.split(' ')[0]}, veuillez trouver ci-joint votre ${doc.type === 'devis' ? 'devis' : 'facture'} ${doc.number ?? ''} d’un montant de ${mad(doc.total_ttc).replace(/ /g, ' ')} TTC.${doc.type === 'facture' && remaining > 0 ? ` Reste à régler : ${mad(remaining).replace(/ /g, ' ')}.` : ''}\nNous restons à votre disposition.\n— ${site.name}`;
+// Partage avec le client : devis (envoyé ou à envoyer) ou facture émise
+const shareable = doc.type === 'devis' ? doc.status !== 'refuse' : isVisibleToClient(doc);
+const clientDocUrl = shareable && isVisibleToClient(doc) ? trackingDocUrl(Astro.url.origin, await ensureShareToken(client), doc.id) : null;
+const hasPhone = !!waLink(client.phone, 'x');
 ---
 
 <AdminLayout title={title} active={doc.type === 'devis' ? 'devis' : 'factures'} crumb={{ label: client.name, href: `/admin/clients/${client.id}/` }}>
   <Fragment slot="actions">
     <span class={`a-badge tone-${st.tone}`}>{st.label}</span>
     <a class="btn btn--ghost btn--sm" href={`${self}imprimer/`} target="_blank" rel="noopener"><Icon name="file" />Imprimer / PDF</a>
-    {waNumber && <a class="btn btn--wa btn--sm" href={`https://wa.me/${waNumber}?text=${encodeURIComponent(waText)}`} target="_blank" rel="noopener"><Icon name="whatsapp" />WhatsApp</a>}
+    {clientDocUrl && <a class="btn btn--ghost btn--sm" href={clientDocUrl} target="_blank" rel="noopener"><Icon name="globe" />Vue client</a>}
+    {
+      shareable && hasPhone && (
+        <form method="post" target="_blank" class="inline-form" onsubmit="setTimeout(() => location.reload(), 1200)">
+          <input type="hidden" name="_action" value="share_wa" />
+          <button class="btn btn--wa btn--sm" type="submit" title="Envoie au client le lien vers ce document">
+            <Icon name="whatsapp" />
+            {doc.type === 'devis' && doc.status === 'brouillon' ? 'Envoyer le devis' : 'Envoyer sur WhatsApp'}
+          </button>
+        </form>
+      )
+    }
   </Fragment>
 
   <div class="a-split">

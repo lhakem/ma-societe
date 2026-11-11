@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
+Disallow: /suivi/
 
 # Moteurs de recherche IA : autorisés (visibilité dans ChatGPT, Perplexity, Gemini, Copilot)
 User-agent: GPTBot

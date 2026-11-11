@@ -3,7 +3,8 @@ export const prerender = false;
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import ClientFields from '../../../components/admin/ClientFields.astro';
 import Icon from '../../../components/Icon.astro';
-import { getClient, updateClient, addActivity, listActivities, listDocuments, deleteClient } from '../../../lib/db';
+import { getClient, updateClient, addActivity, listActivities, listDocuments, deleteClient, ensureShareToken, regenerateShareToken } from '../../../lib/db';
+import { trackingUrl, waLink } from '../../../lib/share';
 import { clientStatuses, stepsFor, statusOf } from '../../../config/admin';
 import { clientFromForm, go } from '../../../lib/forms';
 import { mad, fmtDate, fmtDateTime } from '../../../lib/money';
@@ -53,6 +54,10 @@ if (Astro.request.method === 'POST') {
     await updateClient(id, patch);
     return Astro.redirect(self + (dir === 'next' ? '?notify=1' : '') + '#suivi');
   }
+  if (action === 'share_regen') {
+    await regenerateShareToken(id);
+    return Astro.redirect(go(self, { ok: 'Nouveau lien de suivi créé. L’ancien lien ne fonctionne plus.' }) + '#partage');
+  }
   if (action === 'delete') {
     if (String(fd.get('confirm')) !== 'SUPPRIMER') return Astro.redirect(go(self, { err: 'Tapez SUPPRIMER pour confirmer.' }));
     if (!(await deleteClient(id))) return Astro.redirect(go(self, { err: 'Impossible : ce client a des factures émises (obligation de conservation).' }));
@@ -65,20 +70,19 @@ const st = clientStatuses[client.status as keyof typeof clientStatuses] ?? clien
 const [activities, docs] = await Promise.all([listActivities(id), listDocuments({ clientId: id })]);
 const pct = Math.round((Math.min(client.step, steps.length) / steps.length) * 100);
 
-// Message WhatsApp de suivi pour le client
-const waNumber = (() => {
-  let d = (client.phone ?? '').replace(/\D/g, '');
-  if (d.startsWith('00')) d = d.slice(2);
-  if (d.length === 10 && d.startsWith('0')) d = '212' + d.slice(1);
-  return d.length >= 11 ? d : '';
-})();
+// Lien de suivi personnel du client
+const shareUrl = trackingUrl(Astro.url.origin, await ensureShareToken(client));
+
+// Messages WhatsApp pour le client (incluent toujours son lien de suivi)
 const firstName = client.name.split(' ')[0];
 const lastDone = client.step > 0 ? steps[client.step - 1] : null;
 const nextStep = client.step < steps.length ? steps[client.step] : null;
 const waText = lastDone
-  ? `Bonjour ${firstName}, suivi de votre dossier ${client.service ?? ''} : l’étape « ${lastDone} » est terminée.${nextStep ? ` Prochaine étape : ${nextStep}.` : ' Votre dossier est finalisé, merci pour votre confiance !'}\n— ${site.name}`
+  ? `Bonjour ${firstName}, suivi de votre dossier ${client.service ?? ''} : l’étape « ${lastDone} » est terminée.${nextStep ? ` Prochaine étape : ${nextStep}.` : ' Votre dossier est finalisé, merci pour votre confiance !'}\n\nSuivez votre dossier à tout moment : ${shareUrl}\n— ${site.name}`
   : `Bonjour ${firstName}, ici ${site.name}. Nous avons bien reçu votre demande concernant : ${client.service ?? 'votre projet'}. Quand pouvons-nous vous appeler ?`;
-const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waText)}` : null;
+const waHref = waLink(client.phone, waText);
+const shareText = `Bonjour ${firstName}, voici votre espace de suivi personnel ${site.name}. Vous y verrez l’avancement de votre dossier (${client.service ?? 'votre projet'}) ainsi que vos devis et factures :\n${shareUrl}\n\nGardez ce lien pour vous : il est personnel.\n— ${site.name}`;
+const shareWa = waLink(client.phone, shareText);
 const justNotified = Astro.url.searchParams.has('notify');
 ---
 
@@ -198,6 +202,26 @@ const justNotified = Astro.url.searchParams.has('notify');
     </div>
 
     <div>
+      <section class="a-card share-card" id="partage">
+        <h2>Lien de suivi client</h2>
+        <p class="small muted">
+          Page personnelle où le client voit l’avancement de son dossier, ses devis et ses factures. Pas de mot de passe :
+          le lien est secret, envoyez-le uniquement au client.
+        </p>
+        <div class="share-row">
+          <input class="input" readonly value={shareUrl} aria-label="Lien de suivi" data-share-url />
+          <button type="button" class="btn btn--dark btn--xs" data-copy>Copier</button>
+        </div>
+        <div class="a-actions mt-1">
+          {shareWa && <a class="btn btn--wa btn--xs" href={shareWa} target="_blank" rel="noopener"><Icon name="whatsapp" />Envoyer sur WhatsApp</a>}
+          <a class="btn btn--ghost btn--xs" href={shareUrl} target="_blank" rel="noopener"><Icon name="globe" />Voir comme le client</a>
+        </div>
+        <form method="post" class="mt-2" onsubmit="return confirm('Créer un nouveau lien ? L’ancien lien ne fonctionnera plus.')">
+          <input type="hidden" name="_action" value="share_regen" />
+          <button class="link-btn" type="submit">Renouveler le lien (si partagé par erreur)</button>
+        </form>
+      </section>
+
       <section class="a-card">
         <h2>Coordonnées</h2>
         <dl class="dl">
@@ -236,7 +260,49 @@ const justNotified = Astro.url.searchParams.has('notify');
   </div>
 </AdminLayout>
 
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const input = btn.parentElement!.querySelector<HTMLInputElement>('[data-share-url]')!;
+      try {
+        await navigator.clipboard.writeText(input.value);
+      } catch {
+        input.select();
+        document.execCommand('copy');
+      }
+      btn.textContent = 'Copié ✓';
+      setTimeout(() => (btn.textContent = 'Copier'), 2000);
+    }),
+  );
+</script>
+
 <style>
+  .share-card {
+    border-color: var(--brand-200);
+    background: linear-gradient(180deg, var(--brand-50), #fff 60%);
+  }
+  .share-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .share-row .input {
+    min-height: 38px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    color: var(--ink-700);
+    background: #fff;
+  }
+  .link-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--ink-500);
+    font-size: 0.82rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
   .pct {
     font-family: var(--font-body);
     font-size: 0.85rem;

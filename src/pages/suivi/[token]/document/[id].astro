@@ -1,0 +1,23 @@
+---
+/** Devis ou facture consultable par le client depuis son lien de suivi (aperçu + PDF). */
+export const prerender = false;
+import DocumentSheet from '../../../../components/DocumentSheet.astro';
+import { getClientByToken, getDocument, getSettings, isVisibleToClient } from '../../../../lib/db';
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+
+const token = Astro.params.token ?? '';
+const client = await getClientByToken(token);
+const id = Number(Astro.params.id);
+const full = client && Number.isInteger(id) ? await getDocument(id) : undefined;
+
+// Le document doit appartenir au client du lien ET être visible (pas de brouillon, pas d'annulée)
+if (!client || !full || full.doc.client_id !== client.id || !isVisibleToClient(full.doc)) {
+  return new Response('Document introuvable.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+const s = await getSettings();
+---
+
+<DocumentSheet doc={full.doc} client={full.client} lines={full.lines} s={s} backHref={`/suivi/${token}/`} backLabel="Mon suivi" />

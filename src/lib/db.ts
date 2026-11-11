@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS clients (
   status TEXT NOT NULL DEFAULT 'nouveau',
   step INTEGER NOT NULL DEFAULT 0,
   notes TEXT,
+  share_token TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -74,14 +75,28 @@ CREATE INDEX IF NOT EXISTS idx_pay_doc ON payments(document_id)
 `;
 
 /* ---------- Accès bas niveau ---------- */
+/** Évolutions de structure pour une base déjà existante (idempotent). */
+async function migrate() {
+  const cols = (await D().prepare('PRAGMA table_info(clients)').all<{ name: string }>()).results.map((c) => c.name);
+  if (!cols.includes('share_token')) await D().prepare('ALTER TABLE clients ADD COLUMN share_token TEXT').run();
+  await D().prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_share ON clients(share_token)').run();
+}
+
 let ready: Promise<unknown> | null = null;
 export const ensureSchema = () =>
   (ready ??= D()
     .batch(SCHEMA.split(';').map((s) => s.trim()).filter(Boolean).map((s) => D().prepare(s)))
+    .then(migrate)
     .catch((e) => {
       ready = null;
       throw e;
     }));
+
+/** Code secret non devinable (24 caractères) pour le lien de suivi client. */
+export function newShareToken() {
+  const b = crypto.getRandomValues(new Uint8Array(18));
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 
 const norm = (p: unknown[]) => p.map((v) => (v === undefined ? null : v));
 const stmt = (sql: string, ...p: unknown[]) => D().prepare(sql).bind(...norm(p));
@@ -178,10 +193,11 @@ export interface Client {
   status: string;
   step: number;
   notes: string | null;
+  share_token: string | null;
   created_at: string;
   updated_at: string;
 }
-export type ClientInput = Partial<Omit<Client, 'id' | 'created_at' | 'updated_at'>> & { name: string };
+export type ClientInput = Partial<Omit<Client, 'id' | 'created_at' | 'updated_at' | 'share_token'>> & { name: string };
 
 const clientFields = ['name', 'company', 'ice', 'phone', 'email', 'city', 'address', 'service', 'source', 'status', 'step', 'notes'] as const;
 
@@ -219,7 +235,11 @@ export const getClient = (id: number) => get<Client>('SELECT * FROM clients WHER
 export async function createClient(data: ClientInput, activity = 'Client créé'): Promise<number> {
   const cols = clientFields.filter((f) => data[f] !== undefined);
   const [res] = await batch([
-    stmt(`INSERT INTO clients (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`, ...cols.map((c) => data[c] ?? null)),
+    stmt(
+      `INSERT INTO clients (${[...cols, 'share_token'].join(', ')}) VALUES (${[...cols, 'share_token'].map(() => '?').join(', ')})`,
+      ...cols.map((c) => data[c] ?? null),
+      newShareToken(),
+    ),
     stmt("INSERT INTO activities (client_id, kind, text) VALUES (last_insert_rowid(), 'creation', ?)", activity),
   ]);
   return Number(res.meta.last_row_id);
@@ -234,6 +254,48 @@ export async function updateClient(id: number, data: Partial<ClientInput>) {
     id,
   );
 }
+
+/* ---------- Lien de suivi client ---------- */
+/** Retourne le code de suivi du client, en le créant s'il n'existe pas encore. */
+export async function ensureShareToken(client: Client): Promise<string> {
+  if (client.share_token) return client.share_token;
+  const token = newShareToken();
+  await run('UPDATE clients SET share_token = ? WHERE id = ? AND share_token IS NULL', token, client.id);
+  return (await get<{ share_token: string }>('SELECT share_token FROM clients WHERE id = ?', client.id))!.share_token;
+}
+/** Nouveau code : l'ancien lien cesse immédiatement de fonctionner. */
+export async function regenerateShareToken(id: number) {
+  await batch([
+    stmt('UPDATE clients SET share_token = ? WHERE id = ?', newShareToken(), id),
+    activityStmt(id, 'statut', 'Lien de suivi renouvelé (l’ancien lien ne fonctionne plus)'),
+  ]);
+}
+export const getClientByToken = (token: string) =>
+  /^[A-Za-z0-9_-]{20,64}$/.test(token) ? get<Client>('SELECT * FROM clients WHERE share_token = ?', token) : Promise.resolve(undefined);
+
+/** Dates de réalisation des étapes (d'après l'historique), pour la page de suivi. */
+export async function stepDates(clientId: number) {
+  const rows = await all<{ text: string; created_at: string }>(
+    "SELECT text, created_at FROM activities WHERE client_id = ? AND kind = 'etape' AND text LIKE 'Étape terminée : %' ORDER BY created_at, id",
+    clientId,
+  );
+  const m = new Map<string, string>();
+  for (const r of rows) m.set(r.text.replace('Étape terminée : ', ''), r.created_at);
+  return m;
+}
+
+/** Documents visibles par le client : devis envoyés/acceptés et factures émises (hors annulées). */
+export const clientVisibleDocuments = (clientId: number) =>
+  all<Doc>(
+    `SELECT * FROM documents WHERE client_id = ? AND (
+       (type = 'devis' AND status IN ('envoye','accepte')) OR
+       (type = 'facture' AND number IS NOT NULL AND status != 'annulee'))
+     ORDER BY issue_date DESC, id DESC`,
+    clientId,
+  );
+export const isVisibleToClient = (d: Doc) =>
+  (d.type === 'devis' && ['envoye', 'accepte'].includes(d.status)) ||
+  (d.type === 'facture' && !!d.number && d.status !== 'annulee');
 
 export async function deleteClient(id: number): Promise<boolean> {
   const issued = await get<{ n: number }>(

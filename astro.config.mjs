@@ -27,7 +27,7 @@ export default defineConfig({
 
   integrations: [
     sitemap({
-      filter: (page) => !page.includes('/404') && !page.includes('/admin') && !page.includes('/api/'),
+      filter: (page) => !page.includes('/404') && !page.includes('/admin') && !page.includes('/api/') && !page.includes('/suivi/'),
       changefreq: 'weekly',
       lastmod: new Date(),
     }),
