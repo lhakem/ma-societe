@@ -1,0 +1,40 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/PageHero.astro';
+import GuideCard from '../../components/GuideCard.astro';
+import CTABand from '../../components/CTABand.astro';
+import { site } from '../../config/site';
+
+const guides = (await getCollection('guides')).sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
+const itemList = {
+  '@type': 'ItemList',
+  itemListElement: guides.map((g, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    url: new URL(`/guides/${g.id}/`, site.url).href,
+    name: g.data.title,
+  })),
+};
+---
+
+<BaseLayout
+  title="Guides : Créer et Gérer sa Société au Maroc"
+  description="Guides pratiques et à jour pour créer votre société au Maroc : étapes, documents, SARL ou SARL AU, auto-entrepreneur, certificat négatif, fiscalité."
+  breadcrumbs={[{ name: 'Guides', href: '/guides/' }]}
+  schema={[itemList]}>
+  <PageHero
+    eyebrow="Ressources gratuites"
+    title='Guides pour <span class="hl">entreprendre au Maroc</span>'
+    lead="Des explications claires, sans jargon, rédigées par notre équipe à partir des dossiers que nous traitons chaque semaine."
+    breadcrumbs={[{ name: 'Guides', href: '/guides/' }]}
+  />
+  <section class="section">
+    <div class="container">
+      <div class="grid grid-3">
+        {guides.map((g) => <GuideCard guide={g} />)}
+      </div>
+    </div>
+  </section>
+  <CTABand />
+</BaseLayout>

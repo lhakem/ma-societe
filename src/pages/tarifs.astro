@@ -1,0 +1,121 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Packs from '../components/Packs.astro';
+import Simulator from '../components/Simulator.astro';
+import FAQ from '../components/FAQ.astro';
+import CTABand from '../components/CTABand.astro';
+import { site, catalog, packs, formatMAD } from '../config/site';
+import { business, faq as faqSchema } from '../lib/schema';
+
+const path = '/tarifs/';
+const faqs = [
+  {
+    q: 'Vos prix incluent-ils les frais administratifs ?',
+    a: `${site.priceNote}. Le devis que nous vous envoyons détaille chaque ligne avant le démarrage du dossier. Seuls les cas particuliers (capital élevé, apports en nature) peuvent entraîner des droits supplémentaires, que nous annonçons à l’avance.`,
+  },
+  {
+    q: 'Comment se fait le paiement ?',
+    a: 'Par virement bancaire ou versement, en une fois au lancement du dossier. Pour les packs avec comptabilité, la partie comptable est incluse dans le prix du pack.',
+  },
+  {
+    q: 'Que se passe-t-il à la fin de la domiciliation ou de la comptabilité incluse ?',
+    a: `Vous êtes libre de continuer avec nous aux tarifs publics (domiciliation dès ${formatMAD(catalog.domiciliationMonthlyFrom)} par mois, comptabilité dès ${formatMAD(catalog.comptabiliteMonthlyFrom)} par mois) ou de partir. Nous vous prévenons un mois avant l’échéance.`,
+  },
+  {
+    q: 'Le prix change-t-il pour une SARL à plusieurs associés ?',
+    a: 'Oui, légèrement : les statuts d’une SARL pluripersonnelle demandent plus de travail (répartition des parts, clauses entre associés). Comptez 300 MAD de plus sur le prix des packs.',
+  },
+];
+---
+
+<BaseLayout
+  title={`Tarifs : Création de Société dès ${formatMAD(packs[0].price)}`}
+  description={`Tous nos prix de création de société au Maroc : packs dès ${formatMAD(packs[0].price)}, SARL AU dès ${formatMAD(catalog.creation['sarl-au'].price)}, domiciliation, comptabilité. Simulateur en ligne et prix fixe affiché.`}
+  breadcrumbs={[{ name: 'Tarifs', href: path }]}
+  schema={[business(), faqSchema(faqs)]}>
+  <PageHero
+    eyebrow="Tarifs transparents"
+    title='Le prix de votre société, <span class="hl">affiché à l’avance</span>'
+    lead="Pas de devis flou ni de frais découverts en cours de route. Choisissez un pack ou composez votre formule avec le simulateur : vous connaissez le prix avant de commencer."
+    breadcrumbs={[{ name: 'Tarifs', href: path }]}
+    points={[site.priceNote, 'Paiement en une fois', 'Devis détaillé ligne par ligne']}
+  />
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head section-head--center">
+        <p class="eyebrow">Packs de création</p>
+        <h2>Trois formules pour bien démarrer</h2>
+      </div>
+      <Packs />
+    </div>
+  </section>
+
+  <section class="section section--alt" id="simulateur">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Simulateur</p>
+        <h2>Composez votre formule à la carte</h2>
+        <p class="lead">Si votre sélection correspond à un pack moins cher, le simulateur vous le signale.</p>
+      </div>
+      <Simulator />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container container--narrow">
+      <div class="section-head">
+        <p class="eyebrow">Grille complète</p>
+        <h2>Tous nos tarifs à la carte</h2>
+      </div>
+      <div class="prose">
+        <h3>Création d’entreprise</h3>
+        <table>
+          <thead><tr><th>Prestation</th><th>Prix HT</th></tr></thead>
+          <tbody>
+            {Object.values(catalog.creation).map((c) => <tr><td>Création {c.label}</td><td>{formatMAD(c.price)}</td></tr>)}
+          </tbody>
+        </table>
+
+        <h3>Domiciliation à Casablanca</h3>
+        <table>
+          <thead><tr><th>Durée</th><th>Prix HT</th></tr></thead>
+          <tbody>
+            {Object.entries(catalog.domiciliation).map(([m, p]) => <tr><td>{m} mois</td><td>{formatMAD(p)}</td></tr>)}
+          </tbody>
+        </table>
+
+        <h3>Comptabilité</h3>
+        <table>
+          <thead><tr><th>Formule</th><th>SARL / SARL AU</th><th>Auto-entrepreneur</th></tr></thead>
+          <tbody>
+            {Object.entries(catalog.comptabilite).map(([m, p]) => <tr><td>{m} mois</td><td>{formatMAD(p)}</td><td>{formatMAD(catalog.comptabiliteAE[Number(m)])}</td></tr>)}
+          </tbody>
+        </table>
+
+        <h3>Modifications et options</h3>
+        <table>
+          <thead><tr><th>Prestation</th><th>Prix HT</th></tr></thead>
+          <tbody>
+            <tr><td>Modification de statuts (siège, gérant, nom, objet, capital)</td><td>dès {formatMAD(catalog.modificationFrom)}</td></tr>
+            <tr><td>Dissolution et liquidation amiable</td><td>dès {formatMAD(catalog.dissolutionFrom)}</td></tr>
+            {Object.values(catalog.extras).filter((e) => e.price > 0).map((e) => <tr><td>{e.label}</td><td>{formatMAD(e.price)}</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="container container--narrow">
+      <div class="section-head section-head--center">
+        <p class="eyebrow">FAQ tarifs</p>
+        <h2>Questions sur nos prix</h2>
+      </div>
+      <FAQ items={faqs} />
+    </div>
+  </section>
+
+  <CTABand title="Un doute sur la bonne formule ?" text="Décrivez-nous votre projet : nous vous recommandons la formule la plus économique, sans engagement." />
+</BaseLayout>

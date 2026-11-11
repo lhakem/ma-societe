@@ -1,0 +1,60 @@
+---
+import Icon from './Icon.astro';
+import { site, whatsappLink } from '../config/site';
+
+interface Props {
+  title?: string;
+  text?: string;
+  waText?: string;
+}
+const {
+  title = 'Prêt à lancer votre société ?',
+  text = `Un conseiller vous répond en ${site.responseTime} et vous envoie la liste exacte des documents à fournir.`,
+  waText,
+} = Astro.props;
+---
+
+<section class="cta-band-wrap">
+  <div class="container">
+    <div class="cta-band pattern-bg">
+      <div>
+        <h2>{title}</h2>
+        <p>{text}</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn btn--light" href="/tarifs/#simulateur">Calculer mon prix <Icon name="arrow" /></a>
+        <a class="btn btn--wa" href={whatsappLink(waText)} target="_blank" rel="noopener"><Icon name="whatsapp" />WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cta-band-wrap {
+    padding-block: clamp(48px, 6vw, 80px);
+  }
+  .cta-band {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    background: linear-gradient(135deg, var(--brand-600), var(--brand-500) 55%, #4c63ef);
+    color: #dfe5ff;
+    border-radius: var(--radius-xl);
+    padding: clamp(32px, 5vw, 56px);
+    overflow: hidden;
+  }
+  .cta-band::before {
+    filter: brightness(5);
+    opacity: 0.12;
+  }
+  h2 {
+    color: #fff;
+    font-size: clamp(1.7rem, 1.3rem + 1.5vw, 2.4rem);
+  }
+  p {
+    margin-top: 10px;
+    max-width: 560px;
+  }
+</style>

@@ -1,0 +1,73 @@
+---
+import Icon from './Icon.astro';
+import { cities } from '../config/cities';
+
+interface Props {
+  exclude?: string;
+}
+const { exclude } = Astro.props;
+const list = cities.filter((c) => c.slug !== exclude);
+---
+
+<ul class="cities">
+  {
+    list.map((c) => (
+      <li>
+        <a href={`/creation-societe-${c.slug}/`} class="city">
+          <Icon name="pin" size={20} />
+          <span>
+            <strong>Création de société {c.prep}</strong>
+            <small>{c.region}</small>
+          </span>
+          <Icon name="arrow" size={18} class="arr" />
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .cities {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 12px;
+  }
+  .city {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--ink-700);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .city:hover {
+    border-color: var(--brand-200);
+    color: var(--ink-900);
+    transform: translateY(-2px);
+  }
+  .city > :global(svg:first-child) {
+    color: var(--brand-500);
+    flex: none;
+  }
+  .city strong {
+    display: block;
+    color: var(--ink-900);
+    font-weight: 600;
+    font-size: 0.98rem;
+  }
+  .city small {
+    color: var(--ink-500);
+    font-size: 0.82rem;
+  }
+  .city :global(.arr) {
+    margin-left: auto;
+    color: var(--ink-400);
+    flex: none;
+  }
+</style>

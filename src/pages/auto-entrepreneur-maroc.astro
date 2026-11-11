@@ -1,0 +1,110 @@
+---
+import ServiceLayout from '../layouts/ServiceLayout.astro';
+import { catalog, site, formatMAD } from '../config/site';
+
+const price = catalog.creation.ae.price;
+const path = '/auto-entrepreneur-maroc/';
+
+const faqs = [
+  {
+    q: 'Quels sont les plafonds de chiffre d’affaires d’un auto-entrepreneur ?',
+    a: '500 000 MAD par an pour les activités commerciales, industrielles et artisanales, et 200 000 MAD par an pour les prestations de services. Au-delà, il faut passer à une société, en général une SARL AU.',
+  },
+  {
+    q: 'Combien d’impôt paie un auto-entrepreneur ?',
+    a: 'L’impôt est calculé sur le chiffre d’affaires encaissé : 0,5 % pour les activités commerciales, industrielles et artisanales, 1 % pour les prestations de services. Il est déclaré et payé chaque trimestre.',
+  },
+  {
+    q: 'Que se passe-t-il si je facture beaucoup un même client ?',
+    a: 'Depuis 2023, la part du chiffre d’affaires réalisée avec un même client au-delà de 80 000 MAD par an fait l’objet d’une retenue à la source de 30 %, prélevée par ce client. Si vous travaillez surtout pour un seul donneur d’ordre, une SARL AU est souvent plus avantageuse : nous faisons le calcul avec vous.',
+  },
+  {
+    q: 'Toutes les activités sont-elles ouvertes au statut ?',
+    a: 'Non. Certaines professions réglementées ou libérales sont exclues par la réglementation. Nous vérifions que votre activité est éligible avant l’inscription.',
+  },
+  {
+    q: 'Puis-je passer d’auto-entrepreneur à SARL AU ?',
+    a: 'Oui, c’est même le parcours de nombreux créateurs. Quand votre chiffre d’affaires approche les plafonds ou que vos clients exigent une société, nous créons votre <a href="/creation-sarl-au-maroc/">SARL AU</a> et organisons la transition.',
+  },
+];
+---
+
+<ServiceLayout
+  metaTitle={`Devenir Auto-Entrepreneur au Maroc dès ${formatMAD(price)} | ${site.name}`}
+  metaDescription={`Devenez auto-entrepreneur au Maroc : vérification de l’éligibilité, inscription, carte AE, déclarations trimestrielles. Accompagnement dès ${formatMAD(price)}.`}
+  path={path}
+  eyebrow="Statut auto-entrepreneur"
+  h1='Devenir auto-entrepreneur au Maroc, <span class="hl">simplement</span>'
+  lead="Le statut idéal pour tester une activité ou démarrer seul avec peu de frais. Nous vérifions votre éligibilité, faisons l’inscription avec vous et pouvons gérer vos déclarations chaque trimestre."
+  points={['Impôt de 0,5 % ou 1 % du CA', 'Pas de capital', 'Comptabilité allégée']}
+  crumbs={[{ name: 'Auto-entrepreneur', href: path }]}
+  serviceName="Accompagnement auto-entrepreneur au Maroc"
+  price={price}
+  priceLabel="Inscription auto-entrepreneur"
+  includes={[
+    'Vérification de l’éligibilité de l’activité',
+    'Choix du bon code d’activité',
+    'Inscription au registre national (RNAE)',
+    'Explication des déclarations trimestrielles',
+    'Conseil sur le passage en SARL AU',
+  ]}
+  stepsTitle="Votre statut en 4 étapes"
+  steps={[
+    { title: 'Diagnostic', text: 'Activité, chiffre d’affaires prévu, clients : nous vérifions que le statut est le bon choix.', meta: '15 minutes' },
+    { title: 'Préparation', text: 'Choix du code d’activité, collecte de la CIN et des informations nécessaires.', meta: 'Jour 1' },
+    { title: 'Inscription', text: 'Dépôt de la demande et inscription au registre national de l’auto-entrepreneur.', meta: 'Jours 1-3' },
+    { title: 'Démarrage', text: 'Votre carte et votre identifiant, plus un mémo pour vos déclarations et votre facturation.', meta: 'Quelques jours' },
+  ]}
+  faqs={faqs}
+  waText="Bonjour, je souhaite devenir auto-entrepreneur.">
+  <h2>Le statut d’auto-entrepreneur, en bref</h2>
+  <p>
+    Créé par la loi n° 114-13, le statut d’<strong>auto-entrepreneur</strong> permet à une personne physique d’exercer
+    une activité commerciale, industrielle, artisanale ou de services avec des formalités et une fiscalité très
+    allégées. Pas de capital, pas de statuts à rédiger, pas de comptabilité complète : un registre des recettes et des
+    achats suffit.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Type d’activité</th><th>Plafond annuel</th><th>Impôt sur le CA</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Commerciale, industrielle, artisanale</td><td>500 000 MAD</td><td>0,5 %</td></tr>
+      <tr><td>Prestations de services</td><td>200 000 MAD</td><td>1 %</td></tr>
+    </tbody>
+  </table>
+  <p>
+    L’auto-entrepreneur bénéficie aussi de la couverture maladie (AMO) via la CNSS, moyennant une cotisation dont le
+    montant dépend de son activité.
+  </p>
+
+  <h2>Pour qui est fait ce statut ?</h2>
+  <ul>
+    <li>Les freelances qui démarrent : développeurs, graphistes, formateurs, consultants ;</li>
+    <li>Les artisans et petits commerçants qui veulent exercer en règle ;</li>
+    <li>Les salariés qui lancent une activité secondaire ;</li>
+    <li>Les créateurs qui veulent tester un marché avant de créer une société.</li>
+  </ul>
+
+  <h2>Les limites à connaître</h2>
+  <p>
+    Le statut a des limites. Votre responsabilité n’est pas limitée comme dans une société. Les plafonds de chiffre
+    d’affaires vous obligent à changer de forme si l’activité grandit. Et depuis 2023, une retenue à la source de 30 %
+    s’applique à la part du chiffre d’affaires réalisée avec un même client au-delà de 80 000 MAD par an.
+  </p>
+  <blockquote>
+    <p>
+      <strong>Notre conseil :</strong> si vous facturez surtout une ou deux entreprises, ou si vous prévoyez de dépasser
+      les plafonds, comparez avec la <a href="/creation-sarl-au-maroc/">SARL AU</a> dès le départ. Notre guide
+      <a href="/guides/auto-entrepreneur-ou-societe/">auto-entrepreneur ou société</a> détaille le calcul.
+    </p>
+  </blockquote>
+
+  <h2>Ce que nous faisons pour vous</h2>
+  <ul>
+    <li>Nous vérifions que votre activité est éligible et choisissons le bon code d’activité ;</li>
+    <li>Nous préparons et suivons votre inscription au registre national de l’auto-entrepreneur ;</li>
+    <li>Nous vous expliquons la facturation, le registre des recettes et les déclarations ;</li>
+    <li>En option, nous faisons vos déclarations trimestrielles à votre place, dès {formatMAD(catalog.comptabiliteAE[3])} par trimestre.</li>
+  </ul>
+</ServiceLayout>

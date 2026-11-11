@@ -1,0 +1,145 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  lead?: string;
+  breadcrumbs?: { name: string; href: string }[];
+  points?: string[];
+}
+const { eyebrow, title, lead, breadcrumbs = [], points = [] } = Astro.props;
+const hasAside = Astro.slots.has('aside');
+---
+
+<section class="page-hero pattern-bg">
+  <div class:list={['container', 'hero-grid', { 'has-aside': hasAside }]}>
+    <div class="hero-text">
+      {
+        breadcrumbs.length > 0 && (
+          <nav class="crumbs" aria-label="Fil d'Ariane">
+            <ol>
+              <li>
+                <a href="/">Accueil</a>
+              </li>
+              {breadcrumbs.map((b, i) => (
+                <li>
+                  {i === breadcrumbs.length - 1 ? (
+                    <span aria-current="page">{b.name}</span>
+                  ) : (
+                    <a href={b.href}>{b.name}</a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+      {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+      <h1 set:html={title} />
+      {lead && <p class="lead">{lead}</p>}
+      {
+        points.length > 0 && (
+          <ul class="hero-points">
+            {points.map((p) => (
+              <li>
+                <Icon name="check" size={18} />
+                {p}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      {
+        Astro.slots.has('actions') && (
+          <div class="btn-row hero-actions">
+            <slot name="actions" />
+          </div>
+        )
+      }
+    </div>
+    {
+      hasAside && (
+        <div class="hero-aside">
+          <slot name="aside" />
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .page-hero {
+    padding: clamp(36px, 5vw, 64px) 0 clamp(56px, 7vw, 96px);
+    border-bottom: 1px solid var(--line);
+  }
+  .hero-grid {
+    display: grid;
+    gap: 40px;
+  }
+  .hero-grid.has-aside {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: center;
+  }
+  .hero-text {
+    max-width: 760px;
+  }
+  .crumbs ol {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.86rem;
+    color: var(--ink-500);
+    margin-bottom: 22px;
+  }
+  .crumbs li + li::before {
+    content: '/';
+    margin-right: 6px;
+    color: var(--ink-400);
+  }
+  .crumbs a {
+    color: var(--ink-500);
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--brand-600);
+    text-decoration: underline;
+  }
+  h1 {
+    margin-top: 14px;
+    font-size: clamp(2.1rem, 1.5rem + 2.6vw, 3.5rem);
+  }
+  .lead {
+    margin-top: 20px;
+    max-width: 640px;
+  }
+  .hero-points {
+    list-style: none;
+    padding: 0;
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    font-weight: 550;
+    color: var(--ink-900);
+    font-size: 0.97rem;
+  }
+  .hero-points li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-points :global(svg) {
+    color: var(--mint);
+  }
+  .hero-actions {
+    margin-top: 32px;
+  }
+  @media (max-width: 900px) {
+    .hero-grid.has-aside {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

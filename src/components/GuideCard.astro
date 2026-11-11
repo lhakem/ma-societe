@@ -1,0 +1,64 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Icon from './Icon.astro';
+
+interface Props {
+  guide: CollectionEntry<'guides'>;
+}
+const { guide } = Astro.props;
+const d = guide.data;
+---
+
+<a href={`/guides/${guide.id}/`} class="guide card card--hover">
+  <span class="g-meta">
+    <span class="badge">{d.category}</span>
+    <span class="g-time"><Icon name="clock" size={14} />{d.readingTime} min</span>
+  </span>
+  <h3>{d.title}</h3>
+  <p>{d.description}</p>
+  <span class="g-more">Lire le guide <Icon name="arrow" size={16} /></span>
+</a>
+
+<style>
+  .guide {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+  }
+  .guide:hover {
+    color: inherit;
+  }
+  .g-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .g-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem;
+    color: var(--ink-500);
+  }
+  h3 {
+    margin-top: 18px;
+    font-size: 1.2rem;
+  }
+  p {
+    margin-top: 10px;
+    color: var(--ink-500);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .g-more {
+    margin-top: auto;
+    padding-top: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.93rem;
+    color: var(--brand-600);
+  }
+</style>

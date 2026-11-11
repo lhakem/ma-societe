@@ -1,0 +1,105 @@
+---
+import ServiceLayout from '../layouts/ServiceLayout.astro';
+import { catalog, site, formatMAD } from '../config/site';
+
+const path = '/comptabilite-entreprise-maroc/';
+const from = catalog.comptabiliteMonthlyFrom;
+
+const faqs = [
+  {
+    q: 'Une SARL sans activité doit-elle faire des déclarations ?',
+    a: 'Oui. Même sans chiffre d’affaires, la société doit déposer ses déclarations (TVA, IS, états de synthèse) dans les délais. Une déclaration oubliée entraîne des pénalités, même pour une société en sommeil.',
+  },
+  {
+    q: 'Ma TVA est-elle mensuelle ou trimestrielle ?',
+    a: 'Le régime trimestriel s’applique aux entreprises dont le chiffre d’affaires annuel est inférieur à 1 000 000 MAD, ainsi qu’aux nouvelles sociétés pendant leur première année. Au-delà, la déclaration est mensuelle.',
+  },
+  {
+    q: 'Quand faut-il déposer le bilan ?',
+    a: 'La déclaration d’IS et les états de synthèse (bilan, compte de produits et charges, etc.) doivent être déposés dans les trois mois qui suivent la clôture de l’exercice, soit avant le 31 mars pour un exercice calé sur l’année civile.',
+  },
+  {
+    q: 'Comment vous transmettre mes factures ?',
+    a: 'Par WhatsApp, e-mail ou dossier partagé, au fil de l’eau ou une fois par mois. Nous vous indiquons les pièces manquantes avant chaque échéance.',
+  },
+  {
+    q: 'Je change de comptable, comment ça se passe ?',
+    a: 'Nous récupérons les éléments auprès de votre ancien comptable (balance, déclarations, accès), faisons un état des lieux de votre situation fiscale et reprenons le dossier sans interruption.',
+  },
+];
+---
+
+<ServiceLayout
+  metaTitle={`Comptabilité SARL au Maroc dès ${formatMAD(from)}/mois | ${site.name}`}
+  metaDescription={`Comptable en ligne pour SARL, SARL AU et auto-entrepreneurs : tenue des comptes, TVA, CNSS, acomptes d’IS, bilan. Dès ${formatMAD(from)} par mois, interlocuteur dédié.`}
+  path={path}
+  eyebrow="Comptabilité et fiscalité"
+  h1='La comptabilité de votre société, <span class="hl">sans stress</span>'
+  lead="Déclarations de TVA, CNSS, acomptes d’impôt, bilan annuel : nous tenons votre comptabilité et respectons chaque échéance, pour que vous puissiez vous consacrer à votre activité."
+  points={['Comptable dédié', 'Échéances respectées', 'Pièces envoyées par WhatsApp']}
+  crumbs={[{ name: 'Comptabilité', href: path }]}
+  serviceName="Comptabilité et déclarations fiscales pour entreprises au Maroc"
+  price={from}
+  priceUnit="/ mois"
+  priceLabel="Comptabilité de société"
+  includes={[
+    'Tenue de la comptabilité (CGNC)',
+    'Déclarations de TVA (SIMPL)',
+    'Déclarations CNSS (Damancom)',
+    'Acomptes provisionnels d’IS',
+    'Rappels avant chaque échéance',
+  ]}
+  stepsTitle="Comment nous travaillons"
+  steps={[
+    { title: 'Bilan de départ', text: 'Nous faisons le point sur votre activité, votre régime de TVA et vos échéances.', meta: 'Semaine 1' },
+    { title: 'Envoi des pièces', text: 'Vous transmettez factures et relevés par WhatsApp, e-mail ou dossier partagé.', meta: 'Chaque mois' },
+    { title: 'Déclarations', text: 'Nous préparons et déposons vos déclarations, et vous indiquons les montants à payer.', meta: 'Avant échéance' },
+    { title: 'Clôture annuelle', text: 'Bilan, états de synthèse et déclaration d’IS, avec un point sur vos résultats.', meta: 'Avant le 31 mars' },
+  ]}
+  faqs={faqs}
+  waText="Bonjour, je cherche un comptable pour ma société.">
+  <h2>Les obligations comptables d’une société au Maroc</h2>
+  <p>
+    Une SARL ou une SARL AU doit tenir une comptabilité conforme au <strong>Code général de normalisation comptable
+    (CGNC)</strong> et respecter un calendrier de déclarations précis. Les principales échéances :
+  </p>
+  <table>
+    <thead>
+      <tr><th>Obligation</th><th>Fréquence</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Déclaration de TVA</td><td>Mensuelle ou trimestrielle selon le chiffre d’affaires</td></tr>
+      <tr><td>Déclaration CNSS des salariés</td><td>Mensuelle, si vous avez des employés</td></tr>
+      <tr><td>Retenue IR sur salaires</td><td>Mensuelle, si vous avez des employés</td></tr>
+      <tr><td>Acomptes provisionnels d’IS</td><td>4 fois par an</td></tr>
+      <tr><td>Déclaration d’IS et états de synthèse</td><td>Annuelle, dans les 3 mois après la clôture</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Les retards sont sanctionnés par des majorations et des pénalités, même pour une société qui n’a pas encore
+    démarré son activité. Confier ces échéances à un comptable vous évite ces coûts.
+  </p>
+
+  <h2>Ce que comprend notre offre</h2>
+  <ul>
+    <li>Saisie et tenue de la comptabilité générale ;</li>
+    <li>Déclarations de TVA sur la plateforme SIMPL de la DGI ;</li>
+    <li>Déclarations de salaires sur Damancom (CNSS) et retenues d’IR ;</li>
+    <li>Calcul et déclaration des acomptes d’IS ;</li>
+    <li>Rappels avant chaque échéance et tableau de bord de votre situation ;</li>
+    <li>Bilan annuel et liasse fiscale, sur devis selon le volume de votre activité.</li>
+  </ul>
+  <p>
+    Notre prix mensuel dépend du nombre de factures et de salariés. À partir de {formatMAD(from)} par mois pour une
+    jeune société, et dès {formatMAD(catalog.comptabiliteAE[3])} par trimestre pour un
+    <a href="/auto-entrepreneur-maroc/">auto-entrepreneur</a>.
+  </p>
+
+  <h2>Pourquoi nous confier votre comptabilité ?</h2>
+  <ul>
+    <li><strong>Un interlocuteur unique</strong> qui connaît votre société depuis sa création ;</li>
+    <li><strong>Des réponses rapides</strong> sur WhatsApp, sans attendre un rendez-vous ;</li>
+    <li><strong>Un prix fixe mensuel</strong>, sans facturation surprise à la fin de l’année ;</li>
+    <li><strong>Des conseils</strong> pour optimiser votre rémunération et vos charges, dans le respect de la loi.</li>
+  </ul>
+</ServiceLayout>

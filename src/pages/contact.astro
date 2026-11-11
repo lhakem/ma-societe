@@ -1,0 +1,144 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import ContactForm from '../components/ContactForm.astro';
+import Icon from '../components/Icon.astro';
+import { site, whatsappLink } from '../config/site';
+import { business, ids } from '../lib/schema';
+
+const mapsQuery = site.geo
+  ? `${site.geo.lat},${site.geo.lng}`
+  : `${site.address.street.replace(/,?\s*Étage.*$/i, '')}, ${site.address.city}`;
+const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
+const contactPage = {
+  '@type': 'ContactPage',
+  name: `Contacter ${site.name}`,
+  url: new URL('/contact/', site.url).href,
+  about: { '@id': ids.business },
+};
+---
+
+<BaseLayout
+  title="Contact : Parlez à un Conseiller"
+  description={`Contactez ${site.name} par WhatsApp, téléphone ou formulaire pour créer votre société au Maroc. Réponse en ${site.responseTime}, du lundi au samedi.`}
+  breadcrumbs={[{ name: 'Contact', href: '/contact/' }]}
+  schema={[business(), contactPage]}>
+  <PageHero
+    eyebrow="Contact"
+    title='Parlons de <span class="hl">votre projet</span>'
+    lead={`Décrivez-nous votre activité : un conseiller vous rappelle en ${site.responseTime} (jours ouvrés) avec une recommandation et un prix ferme.`}
+    breadcrumbs={[{ name: 'Contact', href: '/contact/' }]}
+  />
+
+  <section class="section">
+    <div class="container contact-grid">
+      <div class="card form-card">
+        <h2>Demande de rappel gratuite</h2>
+        <p class="muted mt-1">Sans engagement. Vos données restent confidentielles.</p>
+        <div class="mt-3"><ContactForm /></div>
+      </div>
+
+      <div class="channels">
+        <a class="channel channel--wa" href={whatsappLink()} target="_blank" rel="noopener">
+          <span class="icon-tile"><Icon name="whatsapp" /></span>
+          <span><strong>WhatsApp</strong><small>Le plus rapide : réponse en {site.responseTime}</small></span>
+          <Icon name="arrow" size={18} class="arr" />
+        </a>
+        <a class="channel" href={`tel:${site.phoneE164}`}>
+          <span class="icon-tile"><Icon name="phone" /></span>
+          <span><strong>{site.phoneDisplay}</strong><small>Appel ou rappel gratuit</small></span>
+          <Icon name="arrow" size={18} class="arr" />
+        </a>
+        <a class="channel" href={`mailto:${site.email}`}>
+          <span class="icon-tile"><Icon name="mail" /></span>
+          <span><strong>{site.email}</strong><small>Pour l’envoi de documents</small></span>
+          <Icon name="arrow" size={18} class="arr" />
+        </a>
+        <a class="channel" href={mapsUrl} target="_blank" rel="noopener">
+          <span class="icon-tile"><Icon name="pin" /></span>
+          <span><strong>{site.address.street}</strong><small>{[site.address.postalCode, site.address.city].filter(Boolean).join(' ')} · Itinéraire</small></span>
+          <Icon name="arrow" size={18} class="arr" />
+        </a>
+        <div class="hours card">
+          <p class="h-title"><Icon name="clock" size={18} />Horaires d’ouverture</p>
+          <ul>{site.hours.map((h) => <li>{h.label}</li>)}</ul>
+          <p class="small muted mt-1">Sur rendez-vous à nos bureaux. Toutes les démarches peuvent se faire à distance.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contact-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .form-card h2 {
+    font-size: 1.6rem;
+  }
+  .channels {
+    display: grid;
+    gap: 12px;
+  }
+  .channel {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    text-decoration: none;
+    color: var(--ink-700);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .channel:hover {
+    border-color: var(--brand-200);
+    transform: translateY(-2px);
+    color: var(--ink-900);
+  }
+  .channel strong {
+    display: block;
+    color: var(--ink-900);
+    word-break: break-word;
+  }
+  .channel small {
+    color: var(--ink-500);
+    font-size: 0.86rem;
+  }
+  .channel :global(.arr) {
+    margin-left: auto;
+    color: var(--ink-400);
+    flex: none;
+  }
+  .channel--wa .icon-tile {
+    background: #e2f6ea;
+    color: var(--wa);
+  }
+  .hours {
+    padding: 22px;
+  }
+  .h-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--ink-900);
+  }
+  .hours ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+    display: grid;
+    gap: 4px;
+    font-size: 0.95rem;
+  }
+  @media (max-width: 960px) {
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

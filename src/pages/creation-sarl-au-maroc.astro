@@ -1,0 +1,132 @@
+---
+import ServiceLayout from '../layouts/ServiceLayout.astro';
+import { catalog, site, formatMAD, packs } from '../config/site';
+
+const price = catalog.creation['sarl-au'].price;
+const path = '/creation-sarl-au-maroc/';
+
+const faqs = [
+  {
+    q: 'Quelle est la différence entre une SARL et une SARL AU ?',
+    a: 'La SARL AU (associé unique) n’a qu’un seul associé, alors que la SARL classique en compte de 2 à 50. Le fonctionnement est très proche : responsabilité limitée aux apports, gérance, comptabilité et fiscalité identiques. <a href="/guides/sarl-ou-sarl-au/">Voir le comparatif complet</a>.',
+  },
+  {
+    q: 'Quel capital prévoir pour une SARL AU ?',
+    a: 'Aucun minimum n’est imposé par la loi. Beaucoup de créateurs choisissent entre 10 000 et 100 000 MAD pour rassurer banques et fournisseurs. Jusqu’à 100 000 MAD, aucun dépôt sur compte bloqué n’est exigé.',
+  },
+  {
+    q: 'L’associé unique peut-il être gérant ?',
+    a: 'Oui, c’est le cas le plus fréquent. Vous pouvez aussi nommer un gérant extérieur, qui sera désigné dans les statuts ou par une décision de l’associé unique.',
+  },
+  {
+    q: 'Puis-je transformer ma SARL AU en SARL plus tard ?',
+    a: 'Oui. Il suffit de céder une partie de vos parts sociales à un nouvel associé : la société devient alors une SARL classique, après mise à jour des statuts et du registre du commerce. <a href="/modification-societe-maroc/">Nous gérons cette modification</a>.',
+  },
+  {
+    q: 'Combien coûte la création d’une SARL AU ?',
+    a: `Notre prestation commence à ${formatMAD(price)} HT. Avec domiciliation et cachet, le pack ${packs[0].name} est à ${formatMAD(packs[0].price)}. Le prix est fixé avant le démarrage du dossier.`,
+  },
+];
+---
+
+<ServiceLayout
+  metaTitle={`Création SARL AU au Maroc dès ${formatMAD(price)} | ${site.name}`}
+  metaDescription={`Créez votre SARL AU (associé unique) au Maroc 100 % en ligne : statuts, RC, IF, ICE et CNSS inclus. Prix fixe dès ${formatMAD(price)}, délai moyen ${site.delai}.`}
+  path={path}
+  eyebrow="Société à associé unique"
+  h1='Création de SARL AU au Maroc, <span class="hl">100 % en ligne</span>'
+  lead="Vous lancez votre activité seul et voulez protéger votre patrimoine personnel ? La SARL AU est la forme juridique la plus choisie par les entrepreneurs marocains. Nous la créons pour vous, de A à Z."
+  points={['Capital libre', `Immatriculée en ${site.delai}`, 'Aucun déplacement']}
+  crumbs={[{ name: 'Création SARL AU', href: path }]}
+  serviceName="Création de SARL AU au Maroc"
+  price={price}
+  priceLabel="Création SARL AU"
+  includes={[
+    'Certificat négatif (réservation du nom)',
+    'Statuts rédigés pour votre activité',
+    'Enregistrement, IF, ICE, taxe professionnelle',
+    'Immatriculation au registre du commerce',
+    'Annonce légale et affiliation CNSS',
+  ]}
+  stepsTitle="Votre SARL AU en 5 étapes"
+  steps={[
+    { title: 'Réservation du nom', text: 'Nous vérifions la disponibilité de vos propositions et obtenons le certificat négatif auprès de l’OMPIC.', meta: 'Jour 1' },
+    { title: 'Siège et statuts', text: 'Domiciliation ou bail, puis rédaction des statuts : objet social, capital, gérance. Vous validez avant signature.', meta: 'Jours 1-2' },
+    { title: 'Fiscalité', text: 'Enregistrement des statuts, taxe professionnelle, identifiant fiscal et ICE auprès de la DGI.', meta: 'Jours 3-5' },
+    { title: 'Registre du commerce', text: 'Dépôt du dossier et immatriculation au tribunal de commerce de votre ville.', meta: 'Jours 5-8' },
+    { title: 'Finalisation', text: 'Annonce légale, affiliation CNSS et remise de votre dossier complet, prêt pour la banque.', meta: site.delai },
+  ]}
+  faqs={faqs}
+  waText="Bonjour, je souhaite créer une SARL AU.">
+  <h2>Qu’est-ce qu’une SARL AU ?</h2>
+  <p>
+    La <strong>SARL AU</strong>, ou société à responsabilité limitée à associé unique, est une SARL qui ne compte qu’un
+    seul associé. Elle est régie par la loi n° 5-96, comme la SARL classique. Son principal intérêt : votre
+    responsabilité est <strong>limitée au montant de vos apports</strong>. Si l’entreprise rencontre des difficultés,
+    vos biens personnels (logement, épargne) restent en principe protégés.
+  </p>
+  <p>
+    C’est la forme idéale si vous créez seul une activité de services, de commerce ou de conseil et que vous souhaitez
+    travailler avec des entreprises : une SARL AU inspire davantage confiance qu’un statut individuel, peut facturer la
+    TVA, répondre aux appels d’offres et recruter des salariés.
+  </p>
+
+  <h2>Les avantages de la SARL AU</h2>
+  <ul>
+    <li><strong>Capital libre</strong> : aucun minimum légal, vous fixez le montant adapté à votre projet.</li>
+    <li><strong>Patrimoine protégé</strong> : la société est une personne distincte de vous.</li>
+    <li><strong>Évolutive</strong> : vous pourrez faire entrer un associé plus tard en cédant des parts.</li>
+    <li><strong>Crédibilité</strong> : banques, clients et administrations la connaissent bien.</li>
+    <li><strong>Gestion simple</strong> : les décisions sont prises par l’associé unique, sans assemblée à convoquer.</li>
+  </ul>
+  <p>
+    En contrepartie, la SARL AU doit tenir une comptabilité complète et déposer chaque année ses déclarations fiscales,
+    même sans chiffre d’affaires. Si vous démarrez avec de petits revenus, le
+    <a href="/auto-entrepreneur-maroc/">statut d’auto-entrepreneur</a> peut être une première étape plus légère.
+  </p>
+
+  <h2>Ce que comprend notre prestation</h2>
+  <p>Pour {formatMAD(price)} HT, nous prenons en charge l’ensemble du dossier :</p>
+  <ul>
+    <li>Conseil sur l’objet social, le montant du capital et le choix du gérant ;</li>
+    <li>Demande du certificat négatif auprès de l’OMPIC ;</li>
+    <li>Rédaction des statuts et des documents de nomination ;</li>
+    <li>Enregistrement des statuts et inscription à la taxe professionnelle ;</li>
+    <li>Obtention de l’identifiant fiscal (IF) et de l’identifiant commun de l’entreprise (ICE) ;</li>
+    <li>Immatriculation au registre du commerce ;</li>
+    <li>Publication de l’annonce légale et affiliation à la CNSS ;</li>
+    <li>Préparation du dossier d’ouverture du compte bancaire professionnel.</li>
+  </ul>
+  <p>
+    Vous n’avez pas encore d’adresse ? Ajoutez la <a href="/domiciliation-entreprise-maroc/">domiciliation</a> ou
+    choisissez un <a href="/tarifs/">pack</a> qui l’inclut.
+  </p>
+
+  <h2>Les documents à fournir</h2>
+  <ul>
+    <li>Copie de la CIN de l’associé unique (passeport et titre de séjour pour un étranger résident) ;</li>
+    <li>Copie de la CIN du gérant s’il est différent de l’associé ;</li>
+    <li>Trois propositions de nom pour la société, par ordre de préférence ;</li>
+    <li>L’activité précise que vous allez exercer ;</li>
+    <li>Le contrat de bail ou l’attestation de domiciliation (nous pouvons la fournir).</li>
+  </ul>
+  <blockquote>
+    <p>
+      <strong>Bon à savoir :</strong> si le capital dépasse 100 000 MAD, il doit être déposé sur un compte bloqué avant
+      l’immatriculation. Nous vous indiquons alors la marche à suivre avec votre banque.
+    </p>
+  </blockquote>
+
+  <h2>Fiscalité de la SARL AU</h2>
+  <p>
+    La SARL AU est soumise à l’<strong>impôt sur les sociétés (IS)</strong> sur ses bénéfices et, selon son activité, à
+    la <strong>TVA</strong>. Une société nouvellement créée bénéficie d’avantages au démarrage : exonération de la taxe
+    professionnelle pendant 5 ans et de la cotisation minimale pendant ses 36 premiers mois d’exploitation. La
+    rémunération du gérant et les dividendes suivent chacun leur propre régime : nous vous expliquons comment arbitrer
+    entre les deux lors de notre point fiscal de démarrage.
+  </p>
+  <p>
+    Pour aller plus loin, lisez notre guide <a href="/guides/comment-creer-une-societe-au-maroc/">comment créer une
+    société au Maroc</a>.
+  </p>
+</ServiceLayout>

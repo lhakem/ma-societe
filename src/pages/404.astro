@@ -1,0 +1,65 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import { creationLinks, serviceLinks } from '../config/nav';
+---
+
+<BaseLayout title="Page introuvable" description="Cette page n’existe pas ou a été déplacée." noindex>
+  <section class="section pattern-bg nf">
+    <div class="container container--narrow text-center">
+      <p class="code">404</p>
+      <h1>Cette page est introuvable</h1>
+      <p class="lead mt-2">Elle a peut-être été déplacée. Voici les pages les plus consultées :</p>
+      <ul class="links">
+        {
+          [...creationLinks, ...serviceLinks, { label: 'Tarifs', href: '/tarifs/' }, { label: 'Guides', href: '/guides/' }].map((l) => (
+            <li>
+              <a href={l.href}>{l.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+      <a class="btn btn--primary mt-4" href="/">Retour à l’accueil <Icon name="arrow" /></a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    min-height: 60vh;
+  }
+  .code {
+    font-family: var(--font-display);
+    font-size: clamp(5rem, 14vw, 9rem);
+    font-weight: 700;
+    letter-spacing: -0.06em;
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--brand-500);
+  }
+  h1 {
+    margin-top: 12px;
+  }
+  .links {
+    list-style: none;
+    padding: 0;
+    margin-top: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .links a {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--ink-900);
+    font-weight: 500;
+  }
+  .links a:hover {
+    border-color: var(--brand-500);
+  }
+</style>

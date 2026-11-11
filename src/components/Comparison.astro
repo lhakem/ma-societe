@@ -1,0 +1,171 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../config/site';
+
+type Cell = true | false | string;
+const rows: { label: string; diy: Cell; classic: Cell; us: Cell }[] = [
+  { label: 'Prix connu avant de commencer', diy: 'Frais variables', classic: 'Sur devis', us: true },
+  { label: 'Déplacements dans les administrations', diy: 'Plusieurs', classic: 'Rendez-vous', us: 'Aucun' },
+  { label: 'Statuts rédigés pour votre activité', diy: 'Modèle générique', classic: true, us: true },
+  { label: 'Suivi de chaque étape par WhatsApp', diy: false, classic: false, us: true },
+  { label: 'Délai d’immatriculation', diy: 'Variable', classic: 'Variable', us: site.delai },
+  { label: 'Domiciliation et comptabilité au même endroit', diy: false, classic: 'Parfois', us: true },
+];
+---
+
+<div class="cmp-wrap">
+  <table class="cmp">
+    <caption class="sr-only">Comparaison : faire seul, cabinet classique, Ma Société</caption>
+    <thead>
+      <tr>
+        <th scope="col"><span class="sr-only">Critère</span></th>
+        <th scope="col">Faire seul</th>
+        <th scope="col">Cabinet classique</th>
+        <th scope="col" class="us">{site.name}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((r) => (
+          <tr>
+            <th scope="row">{r.label}</th>
+            {[r.diy, r.classic, r.us].map((c, i) => (
+              <td class:list={{ us: i === 2 }} data-label={['Faire seul', 'Cabinet classique', site.name][i]}>
+                {c === true ? (
+                  <span class="yes">
+                    <Icon name="check" size={18} label="Oui" />
+                  </span>
+                ) : c === false ? (
+                  <span class="no">
+                    <Icon name="x" size={16} label="Non" />
+                  </span>
+                ) : (
+                  <span class="txt">{c}</span>
+                )}
+              </td>
+            ))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .cmp-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+    background: var(--white);
+  }
+  .cmp {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.97rem;
+  }
+  th,
+  td {
+    padding: 18px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+  }
+  tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  thead th {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--ink-900);
+    font-weight: 600;
+  }
+  tbody th {
+    text-align: left;
+    font-weight: 550;
+    color: var(--ink-900);
+  }
+  .us {
+    background: var(--brand-50);
+  }
+  thead .us {
+    color: var(--brand-700);
+  }
+  .yes,
+  .no {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+  }
+  .yes {
+    background: var(--mint-soft);
+    color: var(--mint);
+  }
+  .no {
+    background: var(--sand-100);
+    color: var(--ink-400);
+  }
+  .txt {
+    color: var(--ink-500);
+    font-size: 0.92rem;
+  }
+  td.us .txt {
+    color: var(--brand-700);
+    font-weight: 600;
+  }
+
+  /* Mobile : chaque critère devient une carte avec 3 colonnes étiquetées */
+  @media (max-width: 640px) {
+    .cmp {
+      min-width: 0;
+      display: block;
+    }
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    tbody,
+    tr {
+      display: block;
+    }
+    tr {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--line);
+    }
+    tbody tr:last-child {
+      border-bottom: 0;
+    }
+    tbody th {
+      grid-column: 1 / -1;
+      border: 0;
+      padding: 16px 16px 6px;
+    }
+    td {
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 6px;
+      border: 0;
+      padding: 8px 6px 14px;
+    }
+    td::before {
+      content: attr(data-label);
+      font-size: 0.72rem;
+      color: var(--ink-400);
+      font-weight: 500;
+    }
+    td.us::before {
+      color: var(--brand-700);
+      font-weight: 600;
+    }
+    .txt {
+      font-size: 0.82rem;
+    }
+  }
+</style>

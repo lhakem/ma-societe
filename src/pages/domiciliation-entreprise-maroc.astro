@@ -1,0 +1,112 @@
+---
+import ServiceLayout from '../layouts/ServiceLayout.astro';
+import { catalog, site, formatMAD } from '../config/site';
+
+const path = '/domiciliation-entreprise-maroc/';
+const d = catalog.domiciliation;
+
+const faqs = [
+  {
+    q: 'Qu’est-ce que la domiciliation d’entreprise ?',
+    a: 'C’est un contrat par lequel une société de domiciliation met son adresse à votre disposition pour y établir le siège social de votre entreprise. Cette adresse figure sur vos statuts, au registre du commerce et sur vos factures.',
+  },
+  {
+    q: 'La domiciliation est-elle légale au Maroc ?',
+    a: 'Oui. Elle est encadrée par le Code de commerce : le domiciliataire doit disposer de locaux adaptés, tenir un registre des entreprises domiciliées et vérifier leur identité. C’est une solution reconnue par les administrations.',
+  },
+  {
+    q: 'Puis-je domicilier une société déjà créée ?',
+    a: 'Oui. Il faut alors transférer le siège social : décision des associés, mise à jour des statuts et modification au registre du commerce. <a href="/modification-societe-maroc/">Nous gérons ce transfert</a>.',
+  },
+  {
+    q: 'Que se passe-t-il pour mon courrier ?',
+    a: 'Nous réceptionnons votre courrier, vous prévenons à chaque arrivée et le tenons à votre disposition. Sur demande, nous pouvons le scanner pour vous l’envoyer.',
+  },
+  {
+    q: 'Quelle durée d’engagement ?',
+    a: `Nous proposons des contrats de 6, 12 ou 24 mois. Plus la durée est longue, plus le prix mensuel baisse : de ${formatMAD(Math.round(d[6] / 6))} à ${formatMAD(Math.round(d[24] / 24))} par mois.`,
+  },
+];
+---
+
+<ServiceLayout
+  metaTitle={`Domiciliation à Casablanca dès ${formatMAD(catalog.domiciliationMonthlyFrom)}/mois | ${site.name}`}
+  metaDescription={`Domiciliez votre société à Casablanca : adresse de siège social, attestation pour le RC, réception du courrier. Contrats de 6, 12 ou 24 mois, dès ${formatMAD(catalog.domiciliationMonthlyFrom)} par mois.`}
+  path={path}
+  eyebrow="Siège social à Casablanca"
+  h1='Domiciliation d’entreprise <span class="hl">à Casablanca</span>'
+  lead="Une adresse professionnelle pour le siège de votre société, sans payer de bureau. Idéal pour créer votre entreprise, transférer votre siège ou vous implanter au Maroc depuis l’étranger."
+  points={['Attestation de domiciliation', 'Réception du courrier', 'Contrat de 6 à 24 mois']}
+  crumbs={[{ name: 'Domiciliation', href: path }]}
+  serviceName="Domiciliation d'entreprise à Casablanca"
+  price={catalog.domiciliationMonthlyFrom}
+  priceUnit="/ mois"
+  priceLabel="Domiciliation (contrat 24 mois)"
+  includes={[
+    'Adresse de siège social à Casablanca',
+    'Attestation de domiciliation pour le RC',
+    'Réception et notification du courrier',
+    'Mise à disposition des documents',
+    'Contrat conforme au Code de commerce',
+  ]}
+  faqs={faqs}
+  waText="Bonjour, je souhaite domicilier ma société à Casablanca."
+  area="Casablanca">
+  <h2>Pourquoi domicilier votre entreprise ?</h2>
+  <p>
+    Toute société doit avoir un <strong>siège social</strong> : c’est son adresse officielle, celle qui figure au
+    registre du commerce et sur ses documents. Louer un bureau dès le démarrage coûte cher et vous engage sur plusieurs
+    années. La domiciliation vous donne une adresse professionnelle pour une fraction de ce prix.
+  </p>
+  <ul>
+    <li><strong>Économique</strong> : pas de loyer, pas de charges, pas de caution.</li>
+    <li><strong>Rapide</strong> : l’attestation est délivrée dès la signature du contrat, pour lancer la création.</li>
+    <li><strong>Image professionnelle</strong> : une adresse à Casablanca, la capitale économique.</li>
+    <li><strong>Vie privée préservée</strong> : votre adresse personnelle n’apparaît pas sur vos factures.</li>
+  </ul>
+
+  <h2>Nos tarifs de domiciliation</h2>
+  <table>
+    <thead>
+      <tr><th>Durée</th><th>Prix total HT</th><th>Soit par mois</th></tr>
+    </thead>
+    <tbody>
+      {
+        Object.entries(d).map(([m, p]) => (
+          <tr>
+            <td>{m} mois</td>
+            <td>{formatMAD(p)}</td>
+            <td>{formatMAD(Math.round(p / Number(m)))}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  <p>
+    La domiciliation est incluse dans tous nos <a href="/tarifs/">packs de création</a> : 6 mois dans le pack Essentiel,
+    12 mois dans les packs Lancement et Sérénité.
+  </p>
+
+  <h2>Pour qui ?</h2>
+  <ul>
+    <li>Les créateurs qui lancent leur société et n’ont pas encore de local ;</li>
+    <li>Les freelances et consultants qui travaillent chez leurs clients ou en télétravail ;</li>
+    <li>Les sociétés étrangères et les MRE qui ont besoin d’une adresse au Maroc ;</li>
+    <li>Les entreprises existantes qui veulent transférer leur siège à Casablanca.</li>
+  </ul>
+
+  <h2>Les documents à fournir</h2>
+  <ul>
+    <li>Copie de la CIN (ou du passeport) du gérant ;</li>
+    <li>Pour une société en création : le certificat négatif ;</li>
+    <li>Pour une société existante : statuts, modèle J du registre du commerce, IF et ICE.</li>
+  </ul>
+  <blockquote>
+    <p>
+      <strong>Vous n’êtes pas à Casablanca ?</strong> Votre siège peut aussi être votre propre local, un bureau loué ou
+      un centre d’affaires de votre ville. Nous créons votre société partout au Maroc : voir nos pages
+      <a href="/creation-societe-rabat/">Rabat</a>, <a href="/creation-societe-marrakech/">Marrakech</a>,
+      <a href="/creation-societe-tanger/">Tanger</a>.
+    </p>
+  </blockquote>
+</ServiceLayout>

@@ -1,0 +1,155 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../config/site';
+import { cities } from '../config/cities';
+
+const services = [
+  'Création SARL AU',
+  'Création SARL',
+  'Auto-entrepreneur',
+  'Création SAS',
+  'Domiciliation',
+  'Comptabilité',
+  'Modification / dissolution',
+  'Autre question',
+];
+---
+
+<form class="cform" data-cform data-endpoint={site.formEndpoint} data-wa={site.whatsapp} novalidate>
+  <div class="row">
+    <div class="field">
+      <label for="cf-name">Nom complet</label>
+      <input class="input" id="cf-name" name="nom" autocomplete="name" required />
+    </div>
+    <div class="field">
+      <label for="cf-phone">Téléphone / WhatsApp</label>
+      <input class="input" id="cf-phone" name="telephone" type="tel" autocomplete="tel" inputmode="tel" placeholder="06 ..." required />
+    </div>
+  </div>
+  <div class="row">
+    <div class="field">
+      <label for="cf-email">E-mail <span class="muted">(facultatif)</span></label>
+      <input class="input" id="cf-email" name="email" type="email" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label for="cf-city">Ville</label>
+      <select class="select" id="cf-city" name="ville">
+        {cities.map((c) => <option>{c.name}</option>)}
+        <option>Autre ville</option>
+        <option>Je suis à l’étranger</option>
+      </select>
+    </div>
+  </div>
+  <div class="field">
+    <label for="cf-service">Votre besoin</label>
+    <select class="select" id="cf-service" name="service">
+      {services.map((s) => <option>{s}</option>)}
+    </select>
+  </div>
+  <div class="field">
+    <label for="cf-msg">Votre projet en quelques mots <span class="muted">(facultatif)</span></label>
+    <textarea class="textarea" id="cf-msg" name="message" rows="4" placeholder="Activité, nombre d’associés, date de démarrage souhaitée…"></textarea>
+  </div>
+  <label class="consent">
+    <input type="checkbox" name="consent" required />
+    <span>
+      J’accepte que mes données soient utilisées pour être recontacté(e), conformément à la
+      <a href="/politique-de-confidentialite/">politique de confidentialité</a> (loi 09-08).
+    </span>
+  </label>
+  <button class="btn btn--primary btn--block" type="submit">
+    Envoyer ma demande <Icon name="arrow" />
+  </button>
+  <p class="status" role="status" aria-live="polite" data-status></p>
+</form>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-cform]').forEach((form) => {
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.className = 'status';
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+      const endpoint = form.dataset.endpoint;
+
+      if (endpoint) {
+        status.textContent = 'Envoi en cours…';
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify(data),
+          });
+          if (!res.ok) throw new Error(String(res.status));
+          form.reset();
+          status.textContent = 'Merci ! Votre demande est bien reçue, un conseiller vous rappelle très vite.';
+          status.classList.add('ok');
+        } catch {
+          status.textContent = 'L’envoi a échoué. Écrivez-nous directement sur WhatsApp ou par téléphone.';
+          status.classList.add('err');
+        }
+        return;
+      }
+
+      // Pas de service de formulaire configuré : on bascule vers WhatsApp
+      const text = [
+        `Bonjour, je suis ${data.nom}.`,
+        `Besoin : ${data.service} (${data.ville})`,
+        data.message ? `Projet : ${data.message}` : '',
+        `Téléphone : ${data.telephone}`,
+        data.email ? `E-mail : ${data.email}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+      window.open(`https://wa.me/${form.dataset.wa}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+      status.textContent = 'Votre message est prêt dans WhatsApp : il ne reste plus qu’à l’envoyer.';
+      status.classList.add('ok');
+    });
+  });
+</script>
+
+<style>
+  .cform {
+    display: grid;
+    gap: 18px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .consent {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 0.88rem;
+    color: var(--ink-500);
+    line-height: 1.5;
+  }
+  .consent input {
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand-500);
+    flex: none;
+  }
+  .status {
+    font-size: 0.93rem;
+    min-height: 1.4em;
+  }
+  .status.ok {
+    color: var(--mint);
+  }
+  .status.err {
+    color: var(--danger);
+  }
+  @media (max-width: 560px) {
+    .row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

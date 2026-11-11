@@ -1,0 +1,218 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Steps from '../components/Steps.astro';
+import FAQ from '../components/FAQ.astro';
+import CTABand from '../components/CTABand.astro';
+import ServiceGrid from '../components/ServiceGrid.astro';
+import Icon from '../components/Icon.astro';
+import { site, whatsappLink, formatMAD } from '../config/site';
+import { faq as faqSchema, service as serviceSchema } from '../lib/schema';
+
+interface Props {
+  metaTitle: string;
+  metaDescription: string;
+  path: string;
+  eyebrow: string;
+  h1: string;
+  lead: string;
+  points?: string[];
+  crumbs: { name: string; href: string }[];
+  serviceName: string;
+  price: number;
+  priceUnit?: string;
+  priceLabel: string;
+  includes: string[];
+  steps?: { title: string; text: string; meta?: string }[];
+  stepsTitle?: string;
+  faqs: { q: string; a: string }[];
+  waText: string;
+  extraSchema?: Record<string, unknown>[];
+  area?: string;
+}
+
+const p = Astro.props;
+const schema = [
+  serviceSchema({ name: p.serviceName, description: p.metaDescription, path: p.path, price: p.price, area: p.area }),
+  faqSchema(p.faqs),
+  ...(p.extraSchema ?? []),
+];
+---
+
+<BaseLayout title={p.metaTitle} description={p.metaDescription} breadcrumbs={p.crumbs} schema={schema} waText={p.waText}>
+  <PageHero eyebrow={p.eyebrow} title={p.h1} lead={p.lead} breadcrumbs={p.crumbs} points={p.points}>
+    <Fragment slot="actions">
+      <a class="btn btn--primary" href={whatsappLink(p.waText)} target="_blank" rel="noopener">
+        <Icon name="whatsapp" />Démarrer sur WhatsApp
+      </a>
+      <a class="btn btn--ghost" href="/tarifs/#simulateur">Calculer mon prix</a>
+    </Fragment>
+    <aside slot="aside" class="price-card" aria-label="Tarif">
+      <p class="pc-label">{p.priceLabel}</p>
+      <p class="pc-price">
+        <span class="pc-from">à partir de</span>
+        <strong>{formatMAD(p.price)}</strong>
+        {p.priceUnit && <span class="pc-unit">{p.priceUnit}</span>}
+      </p>
+      <ul class="check-list">
+        {p.includes.map((i) => <li>{i}</li>)}
+      </ul>
+      <a class="btn btn--dark btn--block" href={whatsappLink(p.waText)} target="_blank" rel="noopener">
+        Recevoir mon devis <Icon name="arrow" />
+      </a>
+      <p class="pc-note">{site.priceNote}</p>
+    </aside>
+  </PageHero>
+
+  <section class="section">
+    <div class="container content-grid">
+      <article class="prose">
+        <slot />
+      </article>
+      <aside class="side">
+        <div class="side-card">
+          <p class="side-title">Une question sur votre projet ?</p>
+          <p>Un conseiller vous répond en {site.responseTime}, du lundi au samedi.</p>
+          <a class="btn btn--wa btn--block btn--sm" href={whatsappLink(p.waText)} target="_blank" rel="noopener">
+            <Icon name="whatsapp" />Écrire sur WhatsApp
+          </a>
+          <a class="btn btn--ghost btn--block btn--sm" href={`tel:${site.phoneE164}`}>
+            <Icon name="phone" />{site.phoneDisplay}
+          </a>
+        </div>
+        <slot name="side" />
+      </aside>
+    </div>
+  </section>
+
+  {
+    p.steps && (
+      <section class="section section--alt">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Les étapes</p>
+            <h2>{p.stepsTitle ?? 'Comment ça se passe'}</h2>
+          </div>
+          <Steps steps={p.steps} />
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section">
+    <div class="container container--narrow">
+      <div class="section-head section-head--center">
+        <p class="eyebrow">Questions fréquentes</p>
+        <h2>Vos questions, nos réponses</h2>
+      </div>
+      <FAQ items={p.faqs} />
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Nos autres services</p>
+        <h2>Tout pour lancer et gérer votre entreprise</h2>
+      </div>
+      <ServiceGrid exclude={p.path} />
+    </div>
+  </section>
+
+  <CTABand waText={p.waText} />
+</BaseLayout>
+
+<style>
+  .price-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    box-shadow: var(--shadow-lg);
+    display: grid;
+    gap: 18px;
+    max-width: 440px;
+    justify-self: end;
+    width: 100%;
+  }
+  .pc-label {
+    font-weight: 600;
+    color: var(--ink-900);
+  }
+  .pc-price {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-top: -10px;
+  }
+  .pc-from {
+    font-size: 0.88rem;
+    color: var(--ink-500);
+    width: 100%;
+  }
+  .pc-price strong {
+    font-family: var(--font-display);
+    font-size: 2.6rem;
+    letter-spacing: -0.035em;
+    color: var(--ink-900);
+    line-height: 1;
+  }
+  .pc-unit {
+    color: var(--ink-500);
+    font-weight: 600;
+  }
+  .check-list {
+    font-size: 0.95rem;
+  }
+  .pc-note {
+    font-size: 0.8rem;
+    color: var(--ink-500);
+    text-align: center;
+    margin-top: -6px;
+  }
+  .content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: clamp(32px, 5vw, 72px);
+    align-items: start;
+  }
+  .prose {
+    max-width: 760px;
+  }
+  .prose > :global(h2:first-child) {
+    margin-top: 0;
+  }
+  .side {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    display: grid;
+    gap: 16px;
+  }
+  .side-card {
+    background: var(--sand-100);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    display: grid;
+    gap: 12px;
+    font-size: 0.95rem;
+  }
+  .side-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--ink-900);
+  }
+  @media (max-width: 960px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+    .side {
+      position: static;
+    }
+    .price-card {
+      justify-self: stretch;
+      max-width: none;
+    }
+  }
+</style>

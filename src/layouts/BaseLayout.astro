@@ -1,0 +1,152 @@
+---
+import '@fontsource-variable/bricolage-grotesque';
+import bricolageLatin from '@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Icon from '../components/Icon.astro';
+import { site, whatsappLink } from '../config/site';
+import { organization, website, breadcrumbs as breadcrumbSchema } from '../lib/schema';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  schema?: Record<string, unknown>[];
+  breadcrumbs?: { name: string; href: string }[];
+  published?: Date;
+  updated?: Date;
+  waText?: string;
+}
+
+const {
+  title,
+  description,
+  image = '/og-default.png',
+  type = 'website',
+  noindex = false,
+  schema = [],
+  breadcrumbs,
+  published,
+  updated,
+  waText,
+} = Astro.props;
+
+const fullTitle = title.includes(site.name) ? title : `${title} | ${site.name}`;
+const canonical = new URL(Astro.url.pathname, site.url).href;
+const ogImage = new URL(image, site.url).href;
+
+const graph = [
+  organization(),
+  website(),
+  ...(breadcrumbs ? [breadcrumbSchema([{ name: 'Accueil', href: '/' }, ...breadcrumbs])] : []),
+  ...schema,
+];
+const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
+---
+
+<!doctype html>
+<html lang={site.lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" href={bricolageLatin} as="font" type="font/woff2" crossorigin />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content={site.locale} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.name} — ${site.tagline}`} />
+    {published && <meta property="article:published_time" content={published.toISOString()} />}
+    {updated && <meta property="article:modified_time" content={updated.toISOString()} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#fcfaf6" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <script type="application/ld+json" set:html={jsonLd} />
+  </head>
+  <body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <Header />
+    <main id="contenu">
+      <slot />
+    </main>
+    <Footer />
+
+    <a class="wa-float" href={whatsappLink(waText)} target="_blank" rel="noopener" aria-label="Discuter sur WhatsApp">
+      <Icon name="whatsapp" size={28} />
+    </a>
+    <div class="mobile-bar" role="navigation" aria-label="Contact rapide">
+      <a href={`tel:${site.phoneE164}`} class="btn btn--ghost btn--sm"><Icon name="phone" />Appeler</a>
+      <a href={whatsappLink(waText)} target="_blank" rel="noopener" class="btn btn--wa btn--sm"><Icon name="whatsapp" />WhatsApp</a>
+    </div>
+  </body>
+</html>
+
+<style>
+  .wa-float {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 50;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--wa);
+    color: #fff;
+    box-shadow: 0 10px 28px -8px rgb(31 168 85 / 0.7);
+    transition: transform 0.2s;
+  }
+  .wa-float:hover {
+    color: #fff;
+    transform: scale(1.06);
+  }
+  .mobile-bar {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    .wa-float {
+      display: none;
+    }
+    .mobile-bar {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 55;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 10px;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+      background: rgb(252 250 246 / 0.94);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+    }
+    .mobile-bar .btn--ghost {
+      background: var(--white);
+    }
+    :global(body) {
+      padding-bottom: 72px;
+    }
+  }
+</style>
