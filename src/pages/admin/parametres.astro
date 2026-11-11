@@ -1,0 +1,97 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { getSettings, saveSettings, settingDefaults, type Settings } from '../../lib/db';
+import { vatRates } from '../../config/admin';
+import { go } from '../../lib/forms';
+
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const values: Partial<Settings> = {};
+  for (const k of Object.keys(settingDefaults) as (keyof Settings)[]) {
+    if (fd.has(k)) values[k] = String(fd.get(k) ?? '').trim().slice(0, 1000);
+  }
+  if (values.default_vat && !vatRates.includes(Number(values.default_vat))) values.default_vat = '20';
+  await saveSettings(values);
+  return Astro.redirect(go('/admin/parametres/', { ok: 'Paramètres enregistrés.' }));
+}
+const s = await getSettings();
+const field = (k: keyof Settings, label: string, opts: { ph?: string; type?: string } = {}) => ({ k, label, ...opts });
+const company = [
+  field('company_name', 'Raison sociale'),
+  field('brand', 'Nom commercial'),
+  field('address', 'Adresse'),
+  field('phone', 'Téléphone'),
+  field('email', 'E-mail', { type: 'email' }),
+];
+const ids = [
+  field('if', 'Identifiant fiscal (IF)'),
+  field('ice', 'ICE'),
+  field('rc', 'Registre du commerce (RC)', { ph: 'Laisser vide si non applicable' }),
+  field('tp', 'Taxe professionnelle (TP)', { ph: 'Laisser vide si non applicable' }),
+  field('cnss', 'N° CNSS', { ph: 'Laisser vide si non applicable' }),
+];
+---
+
+<AdminLayout title="Paramètres" active="settings">
+  <form method="post" class="a-form">
+    <div class="a-grid a-grid-2">
+      <section class="a-card">
+        <h2>Entreprise (en-tête des documents)</h2>
+        <div class="a-form">
+          {company.map((f) => (
+            <div class="field"><label for={`s-${f.k}`}>{f.label}</label><input class="input" id={`s-${f.k}`} name={f.k} type={f.type ?? 'text'} value={s[f.k]} /></div>
+          ))}
+        </div>
+      </section>
+      <section class="a-card">
+        <h2>Identifiants légaux (pied de page)</h2>
+        <div class="a-form">
+          {ids.map((f) => (
+            <div class="field"><label for={`s-${f.k}`}>{f.label}</label><input class="input" id={`s-${f.k}`} name={f.k} value={s[f.k]} placeholder={f.ph} /></div>
+          ))}
+        </div>
+      </section>
+      <section class="a-card">
+        <h2>Facturation</h2>
+        <div class="a-form">
+          <div class="row">
+            <div class="field">
+              <label for="s-vat">TVA par défaut</label>
+              <select class="select" id="s-vat" name="default_vat">{vatRates.map((r) => <option value={r} selected={String(r) === s.default_vat}>{r} %</option>)}</select>
+            </div>
+            <div class="field"><label for="s-val">Validité des devis (jours)</label><input class="input" id="s-val" name="devis_validity" inputmode="numeric" value={s.devis_validity} /></div>
+            <div class="field"><label for="s-due">Délai de paiement (jours)</label><input class="input" id="s-due" name="payment_due" inputmode="numeric" value={s.payment_due} /></div>
+          </div>
+          <div class="field"><label for="s-vm">Mention si aucune TVA</label><input class="input" id="s-vm" name="vat_mention" value={s.vat_mention} placeholder="Ex. : TVA non applicable" /></div>
+          <div class="field"><label for="s-terms">Conditions de paiement (factures)</label><textarea class="textarea" id="s-terms" name="payment_terms">{s.payment_terms}</textarea></div>
+        </div>
+      </section>
+      <section class="a-card">
+        <h2>Banque et pied de page</h2>
+        <div class="a-form">
+          <div class="field"><label for="s-bank">Banque</label><input class="input" id="s-bank" name="bank" value={s.bank} placeholder="Ex. : Attijariwafa bank, agence Abdelmoumen" /></div>
+          <div class="field"><label for="s-rib">RIB (24 chiffres)</label><input class="input" id="s-rib" name="rib" value={s.rib} inputmode="numeric" /></div>
+          <div class="field"><label for="s-foot">Texte libre en bas des documents</label><textarea class="textarea" id="s-foot" name="footer">{s.footer}</textarea></div>
+        </div>
+      </section>
+    </div>
+    <div class="a-actions mt-2">
+      <button class="btn btn--primary btn--sm" type="submit">Enregistrer les paramètres</button>
+    </div>
+  </form>
+
+  <section class="a-card mt-4">
+    <h2>Sauvegardes et exports</h2>
+    <p class="muted small">
+      Les données sont stockées dans Cloudflare D1, qui garde un historique de 30 jours (restauration possible à la minute
+      près via « Time Travel »). Téléchargez en plus une copie de temps en temps.
+    </p>
+    <div class="a-actions mt-2">
+      <a class="btn btn--dark btn--sm" href="/admin/sauvegarde/"><Icon name="lock" />Télécharger une sauvegarde complète (JSON)</a>
+      <a class="btn btn--ghost btn--sm" href="/admin/export/?type=facture"><Icon name="file" />Exporter les factures (CSV)</a>
+      <a class="btn btn--ghost btn--sm" href="/admin/export/?type=devis"><Icon name="file" />Exporter les devis (CSV)</a>
+    </div>
+  </section>
+</AdminLayout>

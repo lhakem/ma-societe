@@ -1,0 +1,100 @@
+---
+import '@fontsource-variable/bricolage-grotesque';
+import '../styles/global.css';
+import '../styles/admin.css';
+import Logo from '../components/Logo.astro';
+import Icon from '../components/Icon.astro';
+import { countNewLeads } from '../lib/db';
+
+interface Props {
+  title: string;
+  active?: 'dashboard' | 'clients' | 'devis' | 'factures' | 'settings';
+  crumb?: { label: string; href: string };
+  flash?: string | null;
+  error?: string | null;
+}
+const { title, active, crumb, flash, error } = Astro.props;
+const admin = Astro.locals.admin;
+const newLeads = admin ? await countNewLeads() : 0;
+
+const nav = [
+  { id: 'dashboard', label: 'Tableau de bord', href: '/admin/', icon: 'spark' },
+  { id: 'clients', label: 'Clients', href: '/admin/clients/', icon: 'users', count: newLeads },
+  { id: 'devis', label: 'Devis', href: '/admin/documents/?type=devis', icon: 'file' },
+  { id: 'factures', label: 'Factures', href: '/admin/documents/?type=facture', icon: 'calculator' },
+  { id: 'settings', label: 'Paramètres', href: '/admin/parametres/', icon: 'building' },
+];
+const msg = flash ?? Astro.url.searchParams.get('ok');
+const err = error ?? Astro.url.searchParams.get('err');
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · Admin Ma Société</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="admin">
+    {
+      admin ? (
+        <div class="a-shell">
+          <aside class="a-side">
+            <a href="/admin/" class="brand">
+              <Logo tone="light" />
+              <small>Espace admin</small>
+            </a>
+            <nav aria-label="Administration">
+              <ul class="a-nav">
+                {nav.map((n) => (
+                  <li>
+                    <a href={n.href} aria-current={active === n.id ? 'page' : undefined}>
+                      <Icon name={n.icon} size={18} />
+                      <span class="lbl">{n.label}</span>
+                      {n.count ? <span class="count">{n.count}</span> : null}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <div class="a-side-foot">
+              <a href="/" target="_blank" rel="noopener">
+                <Icon name="globe" size={16} />
+                <span>Voir le site</span>
+              </a>
+              <form method="post" action="/admin/logout/">
+                <button type="submit">
+                  <Icon name="lock" size={16} />
+                  <span>Se déconnecter</span>
+                </button>
+              </form>
+              <p class="a-user">{admin.email}</p>
+            </div>
+          </aside>
+          <main class="a-main">
+            <div class="a-top">
+              <div>
+                {crumb && (
+                  <p class="a-crumb">
+                    <a href={crumb.href}>← {crumb.label}</a>
+                  </p>
+                )}
+                <h1>{title}</h1>
+              </div>
+              <div class="a-actions">
+                <slot name="actions" />
+              </div>
+            </div>
+            {msg && <p class="a-flash" role="status">{msg}</p>}
+            {err && <p class="a-flash err" role="alert">{err}</p>}
+            <slot />
+          </main>
+        </div>
+      ) : (
+        <slot />
+      )
+    }
+  </body>
+</html>

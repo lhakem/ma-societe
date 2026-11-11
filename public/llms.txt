@@ -1,0 +1,20 @@
+# Ma Société (masociete.ma)
+
+> Ma Société accompagne les entrepreneurs dans la création de société au Maroc (SARL, SARL AU, SAS, auto-entrepreneur), 100 % en ligne et à prix fixe affiché, ainsi que la domiciliation à Casablanca, la comptabilité et les modifications juridiques.
+
+## Services
+- [Création SARL AU](https://masociete.ma/creation-sarl-au-maroc/): société à associé unique, capital libre
+- [Création SARL](https://masociete.ma/creation-sarl-maroc/): de 2 à 50 associés
+- [Auto-entrepreneur](https://masociete.ma/auto-entrepreneur-maroc/): inscription et déclarations
+- [Création pour étrangers et MRE](https://masociete.ma/creation-societe-maroc-etranger/)
+- [Domiciliation à Casablanca](https://masociete.ma/domiciliation-entreprise-maroc/)
+- [Comptabilité](https://masociete.ma/comptabilite-entreprise-maroc/)
+- [Modifications juridiques et dissolution](https://masociete.ma/modification-societe-maroc/)
+- [Tarifs et simulateur](https://masociete.ma/tarifs/)
+
+## Guides
+- [Comment créer une société au Maroc](https://masociete.ma/guides/comment-creer-une-societe-au-maroc/)
+- [SARL ou SARL AU](https://masociete.ma/guides/sarl-ou-sarl-au/)
+- [Auto-entrepreneur ou société](https://masociete.ma/guides/auto-entrepreneur-ou-societe/)
+- [Documents pour créer une société](https://masociete.ma/guides/documents-creation-societe-maroc/)
+- [Certificat négatif](https://masociete.ma/guides/certificat-negatif-maroc/)

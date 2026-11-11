@@ -1,0 +1,30 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ClientFields from '../../../components/admin/ClientFields.astro';
+import { createClient } from '../../../lib/db';
+import { clientFromForm, go } from '../../../lib/forms';
+
+let error = '';
+let values = {};
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const data = clientFromForm(fd);
+  values = data;
+  if (!data.name) error = 'Le nom du client est obligatoire.';
+  else {
+    const id = await createClient(data);
+    return Astro.redirect(go(`/admin/clients/${id}/`, { ok: 'Client créé.' }));
+  }
+}
+---
+
+<AdminLayout title="Nouveau client" active="clients" crumb={{ label: 'Clients', href: '/admin/clients/' }} error={error || null}>
+  <form method="post" class="a-card a-form">
+    <ClientFields c={values} />
+    <div class="a-actions">
+      <button class="btn btn--primary btn--sm" type="submit">Créer le client</button>
+      <a class="btn btn--ghost btn--sm" href="/admin/clients/">Annuler</a>
+    </div>
+  </form>
+</AdminLayout>

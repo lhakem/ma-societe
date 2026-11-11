@@ -1,0 +1,101 @@
+---
+import ServiceLayout from '../layouts/ServiceLayout.astro';
+import { catalog, site, formatMAD } from '../config/site';
+
+const price = catalog.creation['sarl-au'].price;
+const path = '/creation-societe-maroc-etranger/';
+
+const faqs = [
+  {
+    q: 'Un étranger peut-il détenir 100 % d’une société au Maroc ?',
+    a: 'Oui. Il n’y a pas d’obligation d’associé marocain pour une SARL ou une SARL AU. Un étranger, résident ou non, peut détenir la totalité du capital et être gérant.',
+  },
+  {
+    q: 'Dois-je venir au Maroc pour créer ma société ?',
+    a: 'Non. Vous pouvez signer les statuts et une procuration auprès du consulat du Maroc de votre pays de résidence, ou devant une autorité locale avec apostille. Nous faisons ensuite toutes les démarches sur place.',
+  },
+  {
+    q: 'Pourrai-je transférer les bénéfices dans mon pays ?',
+    a: 'Si votre investissement est financé en devises et réalisé selon la réglementation des changes, les dividendes et le produit de cession peuvent être transférés. C’est pourquoi le capital est en général versé sur un compte en dirhams convertibles.',
+  },
+  {
+    q: 'Faut-il une carte de séjour pour être gérant ?',
+    a: 'Pour être associé ou gérant à distance, non. Si vous comptez vous installer au Maroc pour diriger la société sur place, vous devrez aussi régulariser votre séjour : nous vous orientons sur les démarches.',
+  },
+  {
+    q: 'Je suis Marocain résidant à l’étranger (MRE), est-ce plus simple ?',
+    a: 'Oui : votre CIN marocaine suffit comme pièce d’identité. Vous pouvez aussi investir en devises pour garder la possibilité de rapatrier vos fonds.',
+  },
+];
+---
+
+<ServiceLayout
+  metaTitle={`Créer une Société au Maroc depuis l’Étranger | ${site.name}`}
+  metaDescription="Étranger ou MRE, créez votre société au Maroc à distance : 100 % du capital autorisé, signature au consulat, compte en dirhams convertibles. Accompagnement complet."
+  path={path}
+  eyebrow="Investisseurs étrangers et MRE"
+  h1='Créer une société au Maroc <span class="hl">depuis l’étranger</span>'
+  lead="Vous vivez en Europe, en Afrique ou ailleurs et voulez vous implanter au Maroc ? Nous créons votre société à distance, du choix de la forme juridique à l’ouverture du compte bancaire."
+  points={['100 % du capital possible', 'Aucun voyage obligatoire', 'Échanges en français ou en anglais']}
+  crumbs={[{ name: 'Étrangers et MRE', href: path }]}
+  serviceName="Création de société au Maroc pour étrangers et MRE"
+  price={price}
+  priceLabel="Création SARL AU à distance"
+  includes={[
+    'Conseil sur la forme et la structure',
+    'Modèle de procuration et de statuts',
+    'Toutes les formalités au Maroc',
+    'Domiciliation possible à Casablanca',
+    'Accompagnement pour le compte bancaire',
+  ]}
+  stepsTitle="Votre société au Maroc, sans voyager"
+  steps={[
+    { title: 'Visio de cadrage', text: 'Activité, associés, financement, rapatriement des bénéfices : nous définissons la meilleure structure.', meta: '30 minutes' },
+    { title: 'Documents à distance', text: 'Copie du passeport, choix du nom, puis envoi des statuts et de la procuration à signer.', meta: 'Jours 1-3' },
+    { title: 'Signature', text: 'Légalisation au consulat du Maroc ou apostille dans votre pays, puis envoi des originaux.', meta: 'Selon consulat' },
+    { title: 'Formalités au Maroc', text: 'Nous gérons tout : certificat négatif, fiscalité, registre du commerce, CNSS.', meta: site.delai },
+  ]}
+  faqs={faqs}
+  waText="Hello, I would like to set up a company in Morocco from abroad. / Bonjour, je souhaite créer une société au Maroc depuis l’étranger.">
+  <h2>Pourquoi créer une société au Maroc ?</h2>
+  <p>
+    Situé à quelques heures de l’Europe, ouvert sur l’Afrique et lié par de nombreux accords de libre-échange, le Maroc
+    attire chaque année des entrepreneurs et des investisseurs étrangers : sociétés de services, centres d’appels,
+    import-export, tourisme, immobilier, industrie. La création d’une société y est rapide et accessible, et la loi
+    permet à un étranger de détenir 100 % du capital.
+  </p>
+
+  <h2>Quelle forme juridique choisir ?</h2>
+  <ul>
+    <li><strong>SARL AU</strong> : vous êtes seul associé, personne physique ou société mère étrangère.</li>
+    <li><strong>SARL</strong> : vous vous associez avec d’autres personnes, marocaines ou étrangères.</li>
+    <li><strong>SAS</strong> : plus de liberté dans l’organisation, adaptée aux projets avec investisseurs.</li>
+    <li><strong>Succursale</strong> : pour une société étrangère qui veut une présence au Maroc sans créer de filiale.</li>
+  </ul>
+  <p>
+    Dans la plupart des cas, la <a href="/creation-sarl-au-maroc/">SARL AU</a> est la solution la plus simple pour
+    démarrer. Nous vous conseillons en fonction de votre projet et de votre pays de résidence.
+  </p>
+
+  <h2>Le point clé : le financement en devises</h2>
+  <p>
+    Pour pouvoir transférer plus tard vos dividendes ou le produit d’une cession vers l’étranger, votre investissement
+    doit être réalisé en devises, selon la réglementation des changes. En pratique, le capital est versé sur un
+    <strong>compte en dirhams convertibles</strong> ouvert au nom de la société, et la banque délivre les justificatifs
+    de l’opération. Nous vous accompagnons dans cette démarche dès la création.
+  </p>
+
+  <h2>Les documents à fournir</h2>
+  <ul>
+    <li>Copie du passeport de chaque associé et du gérant (CIN pour les MRE) ;</li>
+    <li>Pour un associé société : statuts et extrait d’immatriculation récents, traduits si nécessaire ;</li>
+    <li>Procuration légalisée au consulat ou apostillée, pour nous permettre d’agir en votre nom ;</li>
+    <li>Trois propositions de nom et la description de l’activité.</li>
+  </ul>
+  <blockquote>
+    <p>
+      <strong>Sans adresse au Maroc ?</strong> Notre <a href="/domiciliation-entreprise-maroc/">domiciliation à
+      Casablanca</a> vous donne un siège social officiel, et nous réceptionnons votre courrier.
+    </p>
+  </blockquote>
+</ServiceLayout>

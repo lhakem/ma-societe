@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+# Moteurs de recherche IA : autorisés (visibilité dans ChatGPT, Perplexity, Gemini, Copilot)
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin/
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://masociete.ma/sitemap-index.xml

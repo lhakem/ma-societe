@@ -1,0 +1,118 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Icon from '../../../components/Icon.astro';
+import { listDocuments, documentStatusCounts } from '../../../lib/db';
+import { devisStatuses, factureStatuses, statusOf } from '../../../config/admin';
+import { mad, fmtDate, today } from '../../../lib/money';
+
+const type = Astro.url.searchParams.get('type') === 'facture' ? 'facture' : 'devis';
+const statuses = type === 'devis' ? devisStatuses : factureStatuses;
+const statusParam = Astro.url.searchParams.get('status') ?? '';
+const status = statusParam in statuses ? statusParam : '';
+const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 100);
+const [docs, countRows] = await Promise.all([
+  listDocuments({ type, status: status || undefined, q: q || undefined }),
+  documentStatusCounts(type),
+]);
+const counts = Object.fromEntries(countRows.map((r) => [r.status, r.n]));
+const total = Object.values(counts).reduce((a, b) => a + Number(b), 0);
+const sum = docs.filter((d) => d.status !== 'annulee').reduce((s, d) => s + d.total_ttc, 0);
+const due = docs.filter((d) => ['emise', 'partielle'].includes(d.status)).reduce((s, d) => s + d.total_ttc - d.paid, 0);
+const tabUrl = (s: string) => `/admin/documents/?${new URLSearchParams({ type, ...(s ? { status: s } : {}), ...(q ? { q } : {}) })}`;
+const now = today();
+---
+
+<AdminLayout title={type === 'devis' ? 'Devis' : 'Factures'} active={type === 'devis' ? 'devis' : 'factures'}>
+  <Fragment slot="actions">
+    <a class="btn btn--primary btn--sm" href={`/admin/documents/nouveau/?type=${type}`}><Icon name="plus" />{type === 'devis' ? 'Nouveau devis' : 'Nouvelle facture'}</a>
+  </Fragment>
+
+  <div class="a-card">
+    <div class="a-filters">
+      <nav class="a-tabs" aria-label="Filtrer par statut">
+        <a href={tabUrl('')} aria-current={status === '' ? 'true' : undefined}>Tous<span class="n">{total}</span></a>
+        {
+          Object.entries(statuses).map(([k, v]) => (
+            <a href={tabUrl(k)} aria-current={status === k ? 'true' : undefined}>
+              {v.label}
+              <span class="n">{counts[k] ?? 0}</span>
+            </a>
+          ))
+        }
+      </nav>
+      <form method="get" class="search" role="search">
+        <input type="hidden" name="type" value={type} />
+        {status && <input type="hidden" name="status" value={status} />}
+        <input class="input" type="search" name="q" value={q} placeholder="Numéro, client, objet…" aria-label="Rechercher" />
+      </form>
+    </div>
+
+    {
+      docs.length === 0 ? (
+        <p class="a-empty">Aucun {type === 'devis' ? 'devis' : 'facture'} pour ce filtre.</p>
+      ) : (
+        <div class="a-table-wrap">
+          <table class="a-table">
+            <thead>
+              <tr>
+                <th>Numéro</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>{type === 'devis' ? 'Validité' : 'Échéance'}</th>
+                <th>Statut</th>
+                <th class="num">Total TTC</th>
+                {type === 'facture' && <th class="num">Reste dû</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {docs.map((d) => {
+                const s = statusOf(d.type, d.status);
+                const late = type === 'facture' && ['emise', 'partielle'].includes(d.status) && d.due_date && d.due_date < now;
+                return (
+                  <tr>
+                    <td>
+                      <a class="row-link" href={`/admin/documents/${d.id}/`}>{d.number ?? 'Brouillon'}</a>
+                      {d.subject && <small>{d.subject}</small>}
+                    </td>
+                    <td>
+                      <a href={`/admin/clients/${d.client_id}/`}>{d.client_name}</a>
+                      {d.client_company && <small>{d.client_company}</small>}
+                    </td>
+                    <td>{fmtDate(d.issue_date)}</td>
+                    <td>
+                      {fmtDate(d.due_date)} {late && <span class="a-badge tone-danger">En retard</span>}
+                    </td>
+                    <td><span class={`a-badge tone-${s.tone}`}>{s.label}</span></td>
+                    <td class="num">{mad(d.total_ttc)}</td>
+                    {type === 'facture' && <td class="num">{['emise', 'partielle'].includes(d.status) ? mad(d.total_ttc - d.paid) : '—'}</td>}
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5"><strong>{docs.length} document(s)</strong></td>
+                <td class="num"><strong>{mad(sum)}</strong></td>
+                {type === 'facture' && <td class="num"><strong>{mad(due)}</strong></td>}
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<style>
+  .search {
+    margin-left: auto;
+  }
+  .search .input {
+    width: 260px;
+  }
+  tfoot td {
+    padding: 14px 10px 4px;
+    border-top: 1px solid var(--line);
+  }
+</style>

@@ -1,0 +1,135 @@
+---
+import Icon from './Icon.astro';
+import { catalog, formatMAD } from '../config/site';
+
+interface Props {
+  exclude?: string;
+}
+const { exclude } = Astro.props;
+
+const services = [
+  {
+    href: '/creation-sarl-au-maroc/',
+    icon: 'user',
+    title: 'Création SARL AU',
+    text: 'Vous entreprenez seul et protégez votre patrimoine personnel. La forme la plus choisie au Maroc.',
+    from: catalog.creation['sarl-au'].price,
+  },
+  {
+    href: '/creation-sarl-maroc/',
+    icon: 'users',
+    title: 'Création SARL',
+    text: 'Vous vous associez : répartition des parts, gérance, clauses d’agrément, tout est prévu dans les statuts.',
+    from: catalog.creation.sarl.price,
+  },
+  {
+    href: '/auto-entrepreneur-maroc/',
+    icon: 'spark',
+    title: 'Auto-entrepreneur',
+    text: 'Inscription, carte, déclarations trimestrielles : nous vous aidons à démarrer avec un impôt de 0,5 % à 1 % du chiffre d’affaires.',
+    from: catalog.creation.ae.price,
+  },
+  {
+    href: '/domiciliation-entreprise-maroc/',
+    icon: 'building',
+    title: 'Domiciliation',
+    text: 'Une adresse de siège social à Casablanca, la réception de votre courrier et une attestation pour vos démarches.',
+    from: catalog.domiciliationMonthlyFrom,
+    unit: '/mois',
+  },
+  {
+    href: '/comptabilite-entreprise-maroc/',
+    icon: 'calculator',
+    title: 'Comptabilité',
+    text: 'Tenue des comptes, déclarations TVA et CNSS, bilan annuel et liasse fiscale, avec un comptable dédié.',
+    from: catalog.comptabiliteMonthlyFrom,
+    unit: '/mois',
+  },
+  {
+    href: '/modification-societe-maroc/',
+    icon: 'file',
+    title: 'Modifications juridiques',
+    text: 'Transfert de siège, cession de parts, changement de gérant, augmentation de capital ou dissolution.',
+    from: catalog.modificationFrom,
+  },
+].filter((s) => s.href !== exclude);
+---
+
+<div class="services">
+  {
+    services.map((s) => (
+      <a href={s.href} class="service card card--hover">
+        <span class="icon-tile">
+          <Icon name={s.icon} />
+        </span>
+        <h3>{s.title}</h3>
+        <p>{s.text}</p>
+        <span class="service-foot">
+          <span class="from">
+            dès <strong>{formatMAD(s.from)}</strong>
+            {s.unit}
+          </span>
+          <span class="go" aria-hidden="true">
+            <Icon name="arrow" size={18} />
+          </span>
+        </span>
+      </a>
+    ))
+  }
+</div>
+
+<style>
+  .services {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 20px;
+  }
+  .service {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+  }
+  .service:hover {
+    color: inherit;
+  }
+  h3 {
+    margin-top: 20px;
+  }
+  p {
+    margin-top: 8px;
+    color: var(--ink-500);
+    font-size: 0.97rem;
+    line-height: 1.6;
+  }
+  .service-foot {
+    margin-top: auto;
+    padding-top: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .from {
+    font-size: 0.9rem;
+    color: var(--ink-500);
+  }
+  .from strong {
+    color: var(--ink-900);
+  }
+  .go {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    color: var(--ink-900);
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+  }
+  .service:hover .go {
+    background: var(--brand-500);
+    border-color: var(--brand-500);
+    color: #fff;
+    transform: translateX(3px);
+  }
+</style>

@@ -1,0 +1,104 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import Icon from '../../../components/Icon.astro';
+import { listClients, clientStatusCounts } from '../../../lib/db';
+import { clientStatuses, stepsFor } from '../../../config/admin';
+import { mad, fmtDate } from '../../../lib/money';
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 100);
+const status = Astro.url.searchParams.get('status') ?? '';
+const [clients, countRows] = await Promise.all([
+  listClients({ q: q || undefined, status: status in clientStatuses ? status : undefined }),
+  clientStatusCounts(),
+]);
+const counts = Object.fromEntries(countRows.map((r) => [r.status, r.n]));
+const total = Object.values(counts).reduce((a, b) => a + Number(b), 0);
+const tabUrl = (s: string) => `/admin/clients/?${new URLSearchParams({ ...(s ? { status: s } : {}), ...(q ? { q } : {}) })}`;
+---
+
+<AdminLayout title="Clients" active="clients">
+  <Fragment slot="actions">
+    <a class="btn btn--primary btn--sm" href="/admin/clients/nouveau/"><Icon name="plus" />Nouveau client</a>
+  </Fragment>
+
+  <div class="a-card">
+    <div class="a-filters">
+      <nav class="a-tabs" aria-label="Filtrer par statut">
+        <a href={tabUrl('')} aria-current={status === '' ? 'true' : undefined}>Tous<span class="n">{total}</span></a>
+        {
+          Object.entries(clientStatuses).map(([k, v]) => (
+            <a href={tabUrl(k)} aria-current={status === k ? 'true' : undefined}>
+              {v.label}
+              <span class="n">{counts[k] ?? 0}</span>
+            </a>
+          ))
+        }
+      </nav>
+      <form method="get" class="search" role="search">
+        {status && <input type="hidden" name="status" value={status} />}
+        <input class="input" type="search" name="q" value={q} placeholder="Nom, société, téléphone, ICE…" aria-label="Rechercher un client" />
+      </form>
+    </div>
+
+    {
+      clients.length === 0 ? (
+        <p class="a-empty">
+          {q || status ? 'Aucun client ne correspond.' : 'Aucun client pour le moment. Les demandes du formulaire du site apparaîtront ici automatiquement.'}
+        </p>
+      ) : (
+        <div class="a-table-wrap">
+          <table class="a-table">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Contact</th>
+                <th>Prestation</th>
+                <th>Statut</th>
+                <th>Suivi</th>
+                <th class="num">Reste dû</th>
+                <th>Mis à jour</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map((c) => {
+                const st = clientStatuses[c.status as keyof typeof clientStatuses] ?? clientStatuses.nouveau;
+                const steps = stepsFor(c.service);
+                const pct = Math.round((Math.min(c.step, steps.length) / steps.length) * 100);
+                return (
+                  <tr>
+                    <td>
+                      <a class="row-link" href={`/admin/clients/${c.id}/`}>{c.name}</a>
+                      {c.company && <small>{c.company}</small>}
+                    </td>
+                    <td>
+                      {c.phone ?? '—'}
+                      {c.email && <small>{c.email}</small>}
+                    </td>
+                    <td>
+                      {c.service ?? '—'}
+                      {c.city && <small>{c.city}</small>}
+                    </td>
+                    <td><span class={`a-badge tone-${st.tone}`}>{st.label}</span></td>
+                    <td>{c.status === 'en_cours' || c.status === 'termine' ? <div class="a-progress" title={`${pct} %`}><span style={`width:${pct}%`} /></div> : '—'}</td>
+                    <td class="num">{c.due > 0 ? mad(c.due) : '—'}</td>
+                    <td>{fmtDate(c.updated_at)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+</AdminLayout>
+
+<style>
+  .search {
+    margin-left: auto;
+  }
+  .search .input {
+    width: 280px;
+  }
+</style>

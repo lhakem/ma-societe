@@ -1,0 +1,278 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GuideCard from '../../components/GuideCard.astro';
+import CTABand from '../../components/CTABand.astro';
+import Icon from '../../components/Icon.astro';
+import { site, whatsappLink } from '../../config/site';
+import { article } from '../../lib/schema';
+
+export async function getStaticPaths() {
+  const guides = await getCollection('guides');
+  return guides.map((g) => ({ params: { slug: g.id }, props: { guide: g } }));
+}
+
+const { guide } = Astro.props as { guide: CollectionEntry<'guides'> };
+const { Content, headings } = await render(guide);
+const d = guide.data;
+const path = `/guides/${guide.id}/`;
+const toc = headings.filter((h) => h.depth === 2);
+
+const all = await getCollection('guides');
+const related = (d.related.length ? all.filter((g) => d.related.includes(g.id)) : all.filter((g) => g.id !== guide.id))
+  .filter((g) => g.id !== guide.id)
+  .slice(0, 3);
+
+const fmt = (date: Date) => new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+const crumbs = [
+  { name: 'Guides', href: '/guides/' },
+  { name: d.title, href: path },
+];
+---
+
+<BaseLayout
+  title={d.metaTitle ?? d.title}
+  description={d.description}
+  type="article"
+  published={d.published}
+  updated={d.updated}
+  breadcrumbs={crumbs}
+  schema={[article({ title: d.title, description: d.description, path, published: d.published, updated: d.updated })]}>
+  <header class="g-hero pattern-bg">
+    <div class="container container--narrow">
+      <nav class="crumbs" aria-label="Fil d'Ariane">
+        <ol>
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/guides/">Guides</a></li>
+          <li><span aria-current="page">{d.category}</span></li>
+        </ol>
+      </nav>
+      <span class="badge">{d.category}</span>
+      <h1>{d.title}</h1>
+      <p class="lead">{d.description}</p>
+      <div class="byline">
+        <span class="avatar" aria-hidden="true">MS</span>
+        <span>
+          <strong>{site.author.name}</strong>
+          <small>{site.author.role}</small>
+        </span>
+        <span class="dates">
+          <span>Mis à jour le <time datetime={(d.updated ?? d.published).toISOString()}>{fmt(d.updated ?? d.published)}</time></span>
+          <span><Icon name="clock" size={14} /> {d.readingTime} min de lecture</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container g-layout">
+    <aside class="toc-wrap">
+      {
+        toc.length > 0 && (
+          <nav class="toc" aria-label="Sommaire">
+            <p class="toc-title">Sommaire</p>
+            <ol>
+              {toc.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+    </aside>
+
+    <article class="prose g-body">
+      <Content />
+
+      <div class="g-cta">
+        <p class="g-cta-title">Besoin d’aide pour votre dossier ?</p>
+        <p>Nous nous occupons de toutes les démarches, à prix fixe. Un conseiller vous répond en {site.responseTime}.</p>
+        <div class="btn-row">
+          <a class="btn btn--primary btn--sm" href={d.cta?.href ?? '/tarifs/'}>{d.cta?.label ?? 'Voir nos tarifs'} <Icon name="arrow" /></a>
+          <a class="btn btn--wa btn--sm" href={whatsappLink(`Bonjour, j’ai lu votre guide « ${d.title} » et j’ai une question.`)} target="_blank" rel="noopener"><Icon name="whatsapp" />WhatsApp</a>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        Ce guide est fourni à titre d’information générale et reflète la réglementation à sa date de mise à jour. Il ne
+        remplace pas un conseil adapté à votre situation.
+      </p>
+    </article>
+  </div>
+
+  {
+    related.length > 0 && (
+      <section class="section section--alt">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">À lire aussi</p>
+            <h2>Guides liés</h2>
+          </div>
+          <div class="grid grid-3">
+            {related.map((g) => (
+              <GuideCard guide={g} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <CTABand />
+</BaseLayout>
+
+<style>
+  .g-hero {
+    padding: clamp(32px, 5vw, 56px) 0 clamp(36px, 5vw, 56px);
+    border-bottom: 1px solid var(--line);
+  }
+  .crumbs ol {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.86rem;
+    color: var(--ink-500);
+    margin-bottom: 22px;
+  }
+  .crumbs li + li::before {
+    content: '/';
+    margin-right: 6px;
+    color: var(--ink-400);
+  }
+  .crumbs a {
+    color: var(--ink-500);
+    text-decoration: none;
+  }
+  h1 {
+    margin-top: 16px;
+    font-size: clamp(2rem, 1.5rem + 2.2vw, 3.1rem);
+  }
+  .lead {
+    margin-top: 18px;
+  }
+  .byline {
+    margin-top: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 14px;
+    font-size: 0.9rem;
+  }
+  .byline strong {
+    display: block;
+    color: var(--ink-900);
+  }
+  .byline small {
+    display: block;
+    color: var(--ink-500);
+  }
+  .avatar {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--brand-500);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .dates {
+    margin-left: auto;
+    display: grid;
+    gap: 2px;
+    color: var(--ink-500);
+    text-align: right;
+  }
+  .dates span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    justify-content: flex-end;
+  }
+  .g-layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 760px);
+    gap: clamp(32px, 5vw, 72px);
+    justify-content: center;
+    padding-block: clamp(40px, 6vw, 72px);
+  }
+  .toc {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    font-size: 0.9rem;
+  }
+  .toc-title {
+    font-weight: 600;
+    color: var(--ink-900);
+    margin-bottom: 12px;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .toc ol {
+    list-style: none;
+    padding: 0;
+    border-left: 2px solid var(--line);
+    display: grid;
+    gap: 2px;
+  }
+  .toc a {
+    display: block;
+    padding: 6px 0 6px 14px;
+    margin-left: -2px;
+    border-left: 2px solid transparent;
+    color: var(--ink-500);
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .toc a:hover {
+    color: var(--ink-900);
+    border-color: var(--brand-500);
+  }
+  .g-body > :global(h2:first-child) {
+    margin-top: 0;
+  }
+  .g-cta {
+    margin-top: 3em !important;
+    padding: 28px;
+    border-radius: var(--radius-lg);
+    background: var(--brand-50);
+    border: 1px solid var(--brand-100);
+  }
+  .g-cta-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--ink-900);
+  }
+  .g-cta p + p {
+    margin-top: 6px;
+  }
+  .g-cta .btn-row {
+    margin-top: 18px;
+  }
+  .disclaimer {
+    font-size: 0.85rem;
+    color: var(--ink-500);
+  }
+  @media (max-width: 960px) {
+    .g-layout {
+      grid-template-columns: 1fr;
+    }
+    .toc-wrap {
+      display: none;
+    }
+    .dates {
+      margin-left: 0;
+      text-align: left;
+      width: 100%;
+    }
+    .dates span {
+      justify-content: flex-start;
+    }
+  }
+</style>

@@ -1,0 +1,183 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import FAQ from '../components/FAQ.astro';
+import CTABand from '../components/CTABand.astro';
+import { site, catalog, packs, formatMAD } from '../config/site';
+import { faq as faqSchema } from '../lib/schema';
+
+const groups = [
+  {
+    id: 'creation',
+    title: 'Création de société',
+    items: [
+      {
+        q: 'Quelles sont les étapes pour créer une société au Maroc ?',
+        a: 'Certificat négatif auprès de l’OMPIC, siège social, rédaction et signature des statuts, dépôt du capital si besoin, enregistrement et formalités fiscales (IF, ICE, taxe professionnelle), immatriculation au registre du commerce, annonce légale et affiliation CNSS. <a href="/guides/comment-creer-une-societe-au-maroc/">Le guide complet</a>.',
+      },
+      {
+        q: 'Combien de temps faut-il pour créer une société ?',
+        a: `En moyenne ${site.delai} après réception d’un dossier complet. Le délai dépend du tribunal de commerce et de la disponibilité du nom.`,
+      },
+      {
+        q: 'Quel capital minimum pour une SARL ?',
+        a: 'Aucun : le capital d’une SARL est libre. Le dépôt sur un compte bloqué est obligatoire seulement au-delà de 100 000 MAD.',
+      },
+      {
+        q: 'Quelle forme juridique choisir ?',
+        a: 'Seul : SARL AU. À plusieurs : SARL. Pour tester une petite activité : auto-entrepreneur. Pour un projet avec investisseurs : SAS. <a href="/guides/sarl-ou-sarl-au/">Notre comparatif</a>.',
+      },
+      {
+        q: 'Dois-je me déplacer ?',
+        a: 'Non, tout se fait à distance. Selon le dossier, seule la légalisation de votre signature peut nécessiter un passage dans un bureau de légalisation proche de chez vous, ou au consulat depuis l’étranger.',
+      },
+    ],
+  },
+  {
+    id: 'tarifs',
+    title: 'Tarifs et paiement',
+    items: [
+      {
+        q: 'Combien coûte la création d’une société avec Ma Société ?',
+        a: `Création SARL AU dès ${formatMAD(catalog.creation['sarl-au'].price)} HT, packs avec domiciliation dès ${formatMAD(packs[0].price)}. <a href="/tarifs/">Tous nos tarifs</a>.`,
+      },
+      {
+        q: 'Y a-t-il des frais cachés ?',
+        a: `Non. ${site.priceNote}. Le devis détaille chaque ligne avant le démarrage, et les cas particuliers (capital élevé, apports en nature) sont annoncés à l’avance.`,
+      },
+      {
+        q: 'Comment payer ?',
+        a: 'Par virement ou versement bancaire, en une fois au lancement du dossier.',
+      },
+    ],
+  },
+  {
+    id: 'domiciliation',
+    title: 'Domiciliation',
+    items: [
+      {
+        q: 'Où se trouve votre adresse de domiciliation ?',
+        a: `À ${site.address.city}. L’adresse figure sur vos statuts, au registre du commerce et sur vos factures.`,
+      },
+      {
+        q: 'Que devient mon courrier ?',
+        a: 'Nous le réceptionnons, vous prévenons et le tenons à votre disposition. Nous pouvons le scanner sur demande.',
+      },
+    ],
+  },
+  {
+    id: 'comptabilite',
+    title: 'Comptabilité et fiscalité',
+    items: [
+      {
+        q: 'Une société sans chiffre d’affaires doit-elle faire des déclarations ?',
+        a: 'Oui. Les déclarations de TVA, d’IS et les états de synthèse doivent être déposés même sans activité, sous peine de pénalités.',
+      },
+      {
+        q: 'Quels avantages fiscaux pour une société nouvelle ?',
+        a: 'Une société nouvellement créée est exonérée de taxe professionnelle pendant 5 ans et de cotisation minimale pendant ses 36 premiers mois d’exploitation.',
+      },
+    ],
+  },
+  {
+    id: 'etranger',
+    title: 'Étrangers et MRE',
+    items: [
+      {
+        q: 'Un étranger peut-il créer une société au Maroc ?',
+        a: 'Oui, et détenir 100 % du capital. La signature peut se faire au consulat du Maroc. <a href="/creation-societe-maroc-etranger/">En savoir plus</a>.',
+      },
+      {
+        q: 'Pourrai-je rapatrier mes bénéfices ?',
+        a: 'Oui si l’investissement est financé en devises selon la réglementation des changes, en général via un compte en dirhams convertibles.',
+      },
+    ],
+  },
+];
+
+const all = groups.flatMap((g) => g.items);
+---
+
+<BaseLayout
+  title="FAQ : Création de Société au Maroc, Réponses Claires"
+  description="Toutes les réponses sur la création de société au Maroc : étapes, délais, capital, prix, domiciliation, comptabilité, création par un étranger ou un MRE."
+  breadcrumbs={[{ name: 'FAQ', href: '/faq/' }]}
+  schema={[faqSchema(all)]}>
+  <PageHero
+    eyebrow="Questions fréquentes"
+    title='Vos questions sur la <span class="hl">création d’entreprise</span>'
+    lead="Les réponses aux questions que nous posent le plus souvent les créateurs. Vous ne trouvez pas la vôtre ? Écrivez-nous."
+    breadcrumbs={[{ name: 'FAQ', href: '/faq/' }]}
+  />
+  <section class="section">
+    <div class="container faq-layout">
+      <nav class="faq-nav" aria-label="Catégories">
+        <ul>{groups.map((g) => <li><a href={`#${g.id}`}>{g.title}</a></li>)}</ul>
+      </nav>
+      <div class="faq-groups">
+        {
+          groups.map((g) => (
+            <section id={g.id} aria-labelledby={`${g.id}-t`}>
+              <h2 id={`${g.id}-t`}>{g.title}</h2>
+              <FAQ items={g.items} openFirst={false} />
+            </section>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+  <CTABand />
+</BaseLayout>
+
+<style>
+  .faq-layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 820px);
+    gap: clamp(32px, 5vw, 64px);
+    justify-content: center;
+  }
+  .faq-nav ul {
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+  }
+  .faq-nav a {
+    display: block;
+    padding: 8px 14px;
+    border-radius: 10px;
+    color: var(--ink-700);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .faq-nav a:hover {
+    background: var(--sand-100);
+    color: var(--ink-900);
+  }
+  .faq-groups {
+    display: grid;
+    gap: 48px;
+  }
+  .faq-groups h2 {
+    font-size: 1.6rem;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 860px) {
+    .faq-layout {
+      grid-template-columns: 1fr;
+    }
+    .faq-nav ul {
+      position: static;
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .faq-nav a {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.9rem;
+    }
+  }
+</style>

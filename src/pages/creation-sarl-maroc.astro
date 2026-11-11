@@ -1,0 +1,113 @@
+---
+import ServiceLayout from '../layouts/ServiceLayout.astro';
+import { catalog, site, formatMAD } from '../config/site';
+
+const price = catalog.creation.sarl.price;
+const path = '/creation-sarl-maroc/';
+
+const faqs = [
+  {
+    q: 'Combien d’associés faut-il pour créer une SARL ?',
+    a: 'Une SARL compte de 2 à 50 associés, personnes physiques ou sociétés. Avec un seul associé, on parle de <a href="/creation-sarl-au-maroc/">SARL AU</a>.',
+  },
+  {
+    q: 'Comment répartir les parts entre associés ?',
+    a: 'Les parts sont réparties selon les apports de chacun. La répartition détermine le poids de chaque associé dans les décisions et sa part des bénéfices. Nous vous aidons à anticiper les cas sensibles : départ d’un associé, entrée d’un investisseur, désaccord.',
+  },
+  {
+    q: 'Le gérant doit-il être associé ?',
+    a: 'Non. Le gérant peut être un associé ou une personne extérieure. La SARL peut aussi avoir plusieurs cogérants. Ses pouvoirs et sa durée de mandat sont fixés dans les statuts.',
+  },
+  {
+    q: 'Un associé peut-il vendre ses parts librement ?',
+    a: 'Entre associés, la cession est en général libre. Pour faire entrer une personne extérieure, la loi impose l’accord des autres associés selon une majorité qualifiée. Les statuts peuvent prévoir des règles plus strictes.',
+  },
+  {
+    q: 'Combien coûte la création d’une SARL ?',
+    a: `Notre prestation commence à ${formatMAD(price)} HT pour une SARL de 2 associés ou plus. Les packs avec domiciliation sont proposés à leur prix de base + 300 MAD. <a href="/tarifs/">Voir les tarifs</a>.`,
+  },
+];
+---
+
+<ServiceLayout
+  metaTitle={`Création SARL au Maroc : Prix Fixe dès ${formatMAD(price)} | ${site.name}`}
+  metaDescription={`Créez votre SARL à plusieurs associés au Maroc sans vous déplacer : statuts sur mesure, répartition des parts, RC, ICE, CNSS. Prix fixe dès ${formatMAD(price)}.`}
+  path={path}
+  eyebrow="Société à plusieurs associés"
+  h1='Création de SARL au Maroc <span class="hl">entre associés</span>'
+  lead="Vous lancez votre entreprise à plusieurs ? Nous rédigeons des statuts qui protègent chaque associé et nous gérons toutes les formalités, jusqu’à l’immatriculation au registre du commerce."
+  points={['De 2 à 50 associés', 'Statuts sur mesure', `Prêt en ${site.delai}`]}
+  crumbs={[{ name: 'Création SARL', href: path }]}
+  serviceName="Création de SARL au Maroc"
+  price={price}
+  priceLabel="Création SARL (2 associés ou plus)"
+  includes={[
+    'Conseil sur la répartition du capital',
+    'Statuts avec clauses entre associés',
+    'Certificat négatif, enregistrement, IF, ICE',
+    'Registre du commerce et annonce légale',
+    'Affiliation CNSS et dossier bancaire',
+  ]}
+  stepsTitle="Votre SARL en 5 étapes"
+  steps={[
+    { title: 'Échange avec les associés', text: 'Répartition des parts, choix du gérant, règles de décision : nous posons les bases avec vous.', meta: 'Jour 1' },
+    { title: 'Nom et siège', text: 'Certificat négatif auprès de l’OMPIC et domiciliation ou bail pour le siège social.', meta: 'Jours 1-2' },
+    { title: 'Statuts', text: 'Rédaction, relecture par tous les associés, puis signature.', meta: 'Jours 2-3' },
+    { title: 'Formalités fiscales', text: 'Enregistrement, taxe professionnelle, IF et ICE.', meta: 'Jours 3-5' },
+    { title: 'Immatriculation', text: 'Registre du commerce, annonce légale et CNSS : la société existe officiellement.', meta: site.delai },
+  ]}
+  faqs={faqs}
+  waText="Bonjour, nous souhaitons créer une SARL entre associés.">
+  <h2>La SARL, la forme la plus courante au Maroc</h2>
+  <p>
+    La <strong>société à responsabilité limitée (SARL)</strong> réunit de 2 à 50 associés qui ne sont responsables des
+    dettes de la société qu’à hauteur de leurs apports. Encadrée par la loi n° 5-96, elle offre un bon équilibre entre
+    souplesse et sécurité, ce qui explique qu’elle soit la forme choisie par la grande majorité des PME marocaines.
+  </p>
+  <p>
+    Depuis la réforme de 2019, il n’y a plus de capital minimum : les associés fixent librement son montant. Le dépôt sur
+    un compte bloqué n’est obligatoire qu’au-delà de 100 000 MAD.
+  </p>
+
+  <h2>Les points à régler entre associés avant de signer</h2>
+  <p>
+    Des statuts copiés d’un modèle fonctionnent tant que tout va bien. Les difficultés apparaissent quand un associé veut
+    partir ou qu’un investisseur veut entrer. Avant la rédaction, nous abordons avec vous :
+  </p>
+  <ul>
+    <li><strong>La répartition du capital</strong> : elle fixe les droits de vote et le partage des bénéfices.</li>
+    <li><strong>La gérance</strong> : un ou plusieurs gérants, associés ou non, et l’étendue de leurs pouvoirs.</li>
+    <li><strong>L’agrément</strong> : les conditions d’entrée d’un nouvel associé.</li>
+    <li><strong>Les décisions importantes</strong> : majorités pour modifier les statuts, emprunter, vendre un actif.</li>
+    <li><strong>Les apports</strong> : apports en numéraire (argent) ou en nature (matériel, fonds de commerce), qui doivent être évalués.</li>
+  </ul>
+  <blockquote>
+    <p>
+      <strong>Conseil :</strong> au-delà des statuts, un pacte d’associés permet de régler les cas sensibles (sortie,
+      non-concurrence, répartition des rôles). Nous pouvons le rédiger avec votre dossier de création.
+    </p>
+  </blockquote>
+
+  <h2>Ce que comprend notre prestation</h2>
+  <ul>
+    <li>Conseil sur la structure du capital et la gérance ;</li>
+    <li>Certificat négatif et rédaction des statuts sur mesure ;</li>
+    <li>Procès-verbal de nomination du gérant si nécessaire ;</li>
+    <li>Enregistrement, taxe professionnelle, identifiant fiscal et ICE ;</li>
+    <li>Immatriculation au registre du commerce et annonce légale ;</li>
+    <li>Affiliation CNSS et dossier pour l’ouverture du compte bancaire.</li>
+  </ul>
+
+  <h2>Les documents à fournir</h2>
+  <ul>
+    <li>Copie de la CIN de chaque associé et du gérant (passeport pour les étrangers) ;</li>
+    <li>Pour un associé société : statuts et extrait du registre du commerce récents ;</li>
+    <li>Trois propositions de nom ;</li>
+    <li>La répartition du capital entre associés ;</li>
+    <li>Le bail du local ou l’attestation de <a href="/domiciliation-entreprise-maroc/">domiciliation</a>.</li>
+  </ul>
+  <p>
+    Vous hésitez encore sur la forme ? Lisez <a href="/guides/sarl-ou-sarl-au/">SARL ou SARL AU : laquelle choisir</a>
+    ou découvrez la <a href="/creation-sarl-au-maroc/">SARL AU</a>.
+  </p>
+</ServiceLayout>

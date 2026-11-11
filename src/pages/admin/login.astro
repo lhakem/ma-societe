@@ -1,0 +1,94 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Logo from '../../components/Logo.astro';
+import { authConfigured, checkCredentials, createSession, cookieOptions, COOKIE, LOGIN_MAX_FAILURES, LOGIN_WINDOW_MS } from '../../lib/auth';
+import { rateCount, hitRateLimit, clearRateLimit } from '../../lib/db';
+
+const rawNext = Astro.url.searchParams.get('next') ?? '/admin/';
+const next = rawNext.startsWith('/admin') && !rawNext.startsWith('//') ? rawNext : '/admin/';
+if (Astro.locals.admin) return Astro.redirect(next);
+
+let error = '';
+let email = '';
+const rateKey = `login:${Astro.clientAddress}`;
+if (Astro.request.method === 'POST') {
+  if ((await rateCount(rateKey)) >= LOGIN_MAX_FAILURES) {
+    error = 'Trop de tentatives. Réessayez dans 15 minutes.';
+  } else {
+    const fd = await Astro.request.formData();
+    email = String(fd.get('email') ?? '').slice(0, 200);
+    const password = String(fd.get('password') ?? '');
+    if (checkCredentials(email, password)) {
+      await clearRateLimit(rateKey);
+      Astro.cookies.set(COOKIE, createSession(email.trim().toLowerCase()), cookieOptions(Astro.url.protocol === 'https:'));
+      return Astro.redirect(next);
+    }
+    await hitRateLimit(rateKey, LOGIN_WINDOW_MS);
+    error = 'E-mail ou mot de passe incorrect.';
+  }
+}
+---
+
+<AdminLayout title="Connexion">
+  <div class="login-wrap pattern-bg">
+    <form method="post" class="login-card a-form">
+      <Logo />
+      <h1>Espace administration</h1>
+      {
+        !authConfigured() ? (
+          <p class="a-flash err">
+            Les identifiants ne sont pas configurés. Ajoutez les secrets <code>ADMIN_EMAIL</code>, <code>ADMIN_PASSWORD</code> (10
+            caractères minimum) et <code>SESSION_SECRET</code> (32 caractères minimum) dans Cloudflare (Worker &gt; Settings &gt;
+            Variables and Secrets), ou dans le fichier <code>.env</code> en local.
+          </p>
+        ) : (
+          <>
+            {error && <p class="a-flash err" role="alert">{error}</p>}
+            <div class="field">
+              <label for="email">E-mail</label>
+              <input class="input" id="email" name="email" type="email" autocomplete="username" required autofocus={!email} value={email} />
+            </div>
+            <div class="field">
+              <label for="password">Mot de passe</label>
+              <input class="input" id="password" name="password" type="password" autocomplete="current-password" required autofocus={!!email} />
+            </div>
+            <button class="btn btn--primary btn--block" type="submit">Se connecter</button>
+          </>
+        )
+      }
+      <a class="back" href="/">← Retour au site</a>
+    </form>
+  </div>
+</AdminLayout>
+
+<style>
+  .login-wrap {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+  }
+  .login-card {
+    width: 100%;
+    max-width: 400px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 32px 28px;
+    box-shadow: var(--shadow-lg);
+    gap: 16px;
+  }
+  h1 {
+    font-size: 1.4rem;
+    margin-top: 8px;
+  }
+  .back {
+    font-size: 0.88rem;
+    text-align: center;
+    color: var(--ink-500);
+  }
+  code {
+    font-size: 0.85em;
+  }
+</style>

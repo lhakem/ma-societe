@@ -1,0 +1,274 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import ClientFields from '../../../components/admin/ClientFields.astro';
+import Icon from '../../../components/Icon.astro';
+import { getClient, updateClient, addActivity, listActivities, listDocuments, deleteClient } from '../../../lib/db';
+import { clientStatuses, stepsFor, statusOf } from '../../../config/admin';
+import { clientFromForm, go } from '../../../lib/forms';
+import { mad, fmtDate, fmtDateTime } from '../../../lib/money';
+import { site } from '../../../config/site';
+
+const id = Number(Astro.params.id);
+const client = Number.isInteger(id) ? await getClient(id) : undefined;
+if (!client) return Astro.redirect(go('/admin/clients/', { err: 'Client introuvable.' }));
+const self = `/admin/clients/${id}/`;
+
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = String(fd.get('_action'));
+  const steps = stepsFor(client.service);
+
+  if (action === 'update') {
+    const data = clientFromForm(fd);
+    if (!data.name) return Astro.redirect(go(self, { err: 'Le nom est obligatoire.' }));
+    await updateClient(id, data.service !== client.service ? { ...data, step: 0 } : data);
+    if (data.status !== client.status)
+      await addActivity(id, 'statut', `Statut : ${clientStatuses[data.status as keyof typeof clientStatuses].label}`);
+    return Astro.redirect(go(self, { ok: 'Fiche mise à jour.' }));
+  }
+  if (action === 'note') {
+    const text = String(fd.get('text') ?? '').trim().slice(0, 5000);
+    if (text) await addActivity(id, String(fd.get('kind') ?? 'note') === 'appel' ? 'appel' : 'note', text);
+    return Astro.redirect(self + '#suivi');
+  }
+  if (action === 'step') {
+    const dir = String(fd.get('dir'));
+    let step = client.step + (dir === 'next' ? 1 : -1);
+    step = Math.max(0, Math.min(steps.length, step));
+    const patch: { step: number; status?: string } = { step };
+    if (dir === 'next') {
+      await addActivity(id, 'etape', `Étape terminée : ${steps[step - 1]}`);
+      if (step >= steps.length) {
+        patch.status = 'termine';
+        await addActivity(id, 'statut', 'Statut : Terminé');
+      } else if (client.status === 'nouveau' || client.status === 'devis') {
+        patch.status = 'en_cours';
+        await addActivity(id, 'statut', 'Statut : Dossier en cours');
+      }
+    } else {
+      await addActivity(id, 'etape', `Étape rouverte : ${steps[step]}`);
+      if (client.status === 'termine') patch.status = 'en_cours';
+    }
+    await updateClient(id, patch);
+    return Astro.redirect(self + (dir === 'next' ? '?notify=1' : '') + '#suivi');
+  }
+  if (action === 'delete') {
+    if (String(fd.get('confirm')) !== 'SUPPRIMER') return Astro.redirect(go(self, { err: 'Tapez SUPPRIMER pour confirmer.' }));
+    if (!(await deleteClient(id))) return Astro.redirect(go(self, { err: 'Impossible : ce client a des factures émises (obligation de conservation).' }));
+    return Astro.redirect(go('/admin/clients/', { ok: 'Client supprimé.' }));
+  }
+}
+
+const steps = stepsFor(client.service);
+const st = clientStatuses[client.status as keyof typeof clientStatuses] ?? clientStatuses.nouveau;
+const [activities, docs] = await Promise.all([listActivities(id), listDocuments({ clientId: id })]);
+const pct = Math.round((Math.min(client.step, steps.length) / steps.length) * 100);
+
+// Message WhatsApp de suivi pour le client
+const waNumber = (() => {
+  let d = (client.phone ?? '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.length === 10 && d.startsWith('0')) d = '212' + d.slice(1);
+  return d.length >= 11 ? d : '';
+})();
+const firstName = client.name.split(' ')[0];
+const lastDone = client.step > 0 ? steps[client.step - 1] : null;
+const nextStep = client.step < steps.length ? steps[client.step] : null;
+const waText = lastDone
+  ? `Bonjour ${firstName}, suivi de votre dossier ${client.service ?? ''} : l’étape « ${lastDone} » est terminée.${nextStep ? ` Prochaine étape : ${nextStep}.` : ' Votre dossier est finalisé, merci pour votre confiance !'}\n— ${site.name}`
+  : `Bonjour ${firstName}, ici ${site.name}. Nous avons bien reçu votre demande concernant : ${client.service ?? 'votre projet'}. Quand pouvons-nous vous appeler ?`;
+const waHref = waNumber ? `https://wa.me/${waNumber}?text=${encodeURIComponent(waText)}` : null;
+const justNotified = Astro.url.searchParams.has('notify');
+---
+
+<AdminLayout title={client.name} active="clients" crumb={{ label: 'Clients', href: '/admin/clients/' }}>
+  <Fragment slot="actions">
+    <span class={`a-badge tone-${st.tone}`}>{st.label}</span>
+    {client.phone && <a class="btn btn--ghost btn--sm" href={`tel:${client.phone.replace(/\s/g, '')}`}><Icon name="phone" />Appeler</a>}
+    <a class="btn btn--ghost btn--sm" href={`/admin/documents/nouveau/?type=devis&client=${id}`}><Icon name="plus" />Devis</a>
+    <a class="btn btn--primary btn--sm" href={`/admin/documents/nouveau/?type=facture&client=${id}`}><Icon name="plus" />Facture</a>
+  </Fragment>
+
+  <div class="a-split">
+    <div>
+      <section class="a-card" id="suivi">
+        <h2>Suivi du dossier · {client.service ?? 'Prestation'} <span class="pct">{pct} %</span></h2>
+        <ol class="a-steps">
+          {
+            steps.map((s, i) => (
+              <li class:list={{ done: i < client.step, current: i === client.step }}>
+                <span class="dot">{i < client.step && <Icon name="check" size={13} />}</span>
+                <span class="label">{s}</span>
+                <span class="small muted">{i < client.step ? 'Fait' : i === client.step ? 'En cours' : ''}</span>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="step-actions">
+          {
+            client.step < steps.length && (
+              <form method="post" class="inline-form">
+                <input type="hidden" name="_action" value="step" />
+                <input type="hidden" name="dir" value="next" />
+                <button class="btn btn--primary btn--xs" type="submit"><Icon name="check" />Valider « {steps[client.step]} »</button>
+              </form>
+            )
+          }
+          {
+            client.step > 0 && (
+              <form method="post" class="inline-form">
+                <input type="hidden" name="_action" value="step" />
+                <input type="hidden" name="dir" value="prev" />
+                <button class="btn btn--ghost btn--xs" type="submit">Annuler la dernière étape</button>
+              </form>
+            )
+          }
+          {
+            waHref && (
+              <a class:list={['btn', 'btn--xs', justNotified ? 'btn--wa' : 'btn--ghost']} href={waHref} target="_blank" rel="noopener">
+                <Icon name="whatsapp" />
+                {justNotified ? 'Prévenir le client sur WhatsApp' : 'Message WhatsApp au client'}
+              </a>
+            )
+          }
+        </div>
+      </section>
+
+      <section class="a-card">
+        <h2>Devis et factures</h2>
+        {
+          docs.length === 0 ? (
+            <p class="a-empty">Aucun document. <a href={`/admin/documents/nouveau/?type=devis&client=${id}`}>Créer un devis</a></p>
+          ) : (
+            <div class="a-table-wrap">
+              <table class="a-table">
+                <thead>
+                  <tr><th>Document</th><th>Date</th><th>Statut</th><th class="num">Total TTC</th><th class="num">Reste dû</th></tr>
+                </thead>
+                <tbody>
+                  {docs.map((d) => {
+                    const s = statusOf(d.type, d.status);
+                    return (
+                      <tr>
+                        <td>
+                          <a class="row-link" href={`/admin/documents/${d.id}/`}>{d.type === 'devis' ? 'Devis' : 'Facture'} {d.number ?? '(brouillon)'}</a>
+                          {d.subject && <small>{d.subject}</small>}
+                        </td>
+                        <td>{fmtDate(d.issue_date)}</td>
+                        <td><span class={`a-badge tone-${s.tone}`}>{s.label}</span></td>
+                        <td class="num">{mad(d.total_ttc)}</td>
+                        <td class="num">{d.type === 'facture' && ['emise', 'partielle'].includes(d.status) ? mad(d.total_ttc - d.paid) : '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
+      </section>
+
+      <section class="a-card">
+        <h2>Historique et notes</h2>
+        <form method="post" class="a-form note-form">
+          <input type="hidden" name="_action" value="note" />
+          <textarea class="textarea" name="text" required maxlength="5000" placeholder="Compte rendu d’appel, document reçu, rappel…" aria-label="Nouvelle note"></textarea>
+          <div class="a-actions">
+            <select class="select" name="kind" aria-label="Type">
+              <option value="note">Note</option>
+              <option value="appel">Appel</option>
+            </select>
+            <button class="btn btn--dark btn--xs" type="submit">Ajouter</button>
+          </div>
+        </form>
+        <ul class="a-timeline mt-3">
+          {
+            activities.map((a) => (
+              <li class={`k-${a.kind}`}>
+                <div>
+                  <time>{fmtDateTime(a.created_at)}{a.kind === 'appel' && ' · Appel'}</time>
+                  <p>{a.text}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </div>
+
+    <div>
+      <section class="a-card">
+        <h2>Coordonnées</h2>
+        <dl class="dl">
+          <dt>Société</dt><dd>{client.company ?? '—'}</dd>
+          <dt>Téléphone</dt><dd>{client.phone ?? '—'}</dd>
+          <dt>E-mail</dt><dd>{client.email ? <a href={`mailto:${client.email}`}>{client.email}</a> : '—'}</dd>
+          <dt>ICE</dt><dd>{client.ice ?? '—'}</dd>
+          <dt>Ville</dt><dd>{client.city ?? '—'}</dd>
+          <dt>Adresse</dt><dd>{client.address ?? '—'}</dd>
+          <dt>Origine</dt><dd>{client.source ?? '—'}</dd>
+          <dt>Créé le</dt><dd>{fmtDate(client.created_at)}</dd>
+        </dl>
+        {client.notes && <p class="muted-box mt-2">{client.notes}</p>}
+        <details class="mt-2">
+          <summary class="btn btn--ghost btn--xs">Modifier la fiche</summary>
+          <form method="post" class="a-form mt-2">
+            <input type="hidden" name="_action" value="update" />
+            <ClientFields c={client} />
+            <button class="btn btn--primary btn--sm" type="submit">Enregistrer</button>
+          </form>
+        </details>
+      </section>
+
+      <section class="a-card">
+        <details>
+          <summary class="danger-sum">Supprimer ce client</summary>
+          <form method="post" class="a-form mt-2">
+            <input type="hidden" name="_action" value="delete" />
+            <p class="small muted">Supprime le client, ses devis et son historique. Impossible si une facture a été émise.</p>
+            <input class="input" name="confirm" placeholder="Tapez SUPPRIMER" aria-label="Confirmation" />
+            <button class="btn btn--danger btn--xs" type="submit">Supprimer définitivement</button>
+          </form>
+        </details>
+      </section>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .pct {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--brand-600);
+    font-weight: 600;
+  }
+  .step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .note-form .a-actions {
+    justify-content: flex-end;
+  }
+  .note-form .select {
+    width: auto;
+    min-height: 34px;
+    padding: 4px 36px 4px 10px;
+  }
+  details summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+  .danger-sum {
+    color: var(--danger);
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+</style>

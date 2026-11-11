@@ -1,0 +1,71 @@
+---
+import type { Client } from '../../lib/db';
+import { clientStatuses, services, sources } from '../../config/admin';
+import { cities } from '../../config/cities';
+
+interface Props {
+  c?: Partial<Client>;
+}
+const { c = {} } = Astro.props;
+---
+
+<div class="row">
+  <div class="field">
+    <label for="f-name">Nom complet *</label>
+    <input class="input" id="f-name" name="name" required maxlength="160" value={c.name ?? ''} />
+  </div>
+  <div class="field">
+    <label for="f-company">Société / projet</label>
+    <input class="input" id="f-company" name="company" maxlength="160" value={c.company ?? ''} placeholder="Raison sociale du client" />
+  </div>
+</div>
+<div class="row">
+  <div class="field">
+    <label for="f-phone">Téléphone / WhatsApp</label>
+    <input class="input" id="f-phone" name="phone" type="tel" maxlength="40" value={c.phone ?? ''} />
+  </div>
+  <div class="field">
+    <label for="f-email">E-mail</label>
+    <input class="input" id="f-email" name="email" type="email" maxlength="160" value={c.email ?? ''} />
+  </div>
+  <div class="field">
+    <label for="f-ice">ICE du client</label>
+    <input class="input" id="f-ice" name="ice" maxlength="30" inputmode="numeric" value={c.ice ?? ''} placeholder="15 chiffres" />
+  </div>
+</div>
+<div class="row">
+  <div class="field">
+    <label for="f-city">Ville</label>
+    <input class="input" id="f-city" name="city" list="cities-list" maxlength="80" value={c.city ?? ''} />
+    <datalist id="cities-list">{cities.map((v) => <option value={v.name} />)}</datalist>
+  </div>
+  <div class="field">
+    <label for="f-address">Adresse (pour la facture)</label>
+    <input class="input" id="f-address" name="address" maxlength="300" value={c.address ?? ''} />
+  </div>
+</div>
+<div class="row">
+  <div class="field">
+    <label for="f-service">Prestation</label>
+    <select class="select" id="f-service" name="service">
+      {services.map((s) => <option selected={c.service === s.label}>{s.label}</option>)}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-source">Origine du contact</label>
+    <select class="select" id="f-source" name="source">
+      <option value="">—</option>
+      {sources.map((s) => <option selected={c.source === s}>{s}</option>)}
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-status">Statut</label>
+    <select class="select" id="f-status" name="status">
+      {Object.entries(clientStatuses).map(([k, v]) => <option value={k} selected={(c.status ?? 'nouveau') === k}>{v.label}</option>)}
+    </select>
+  </div>
+</div>
+<div class="field">
+  <label for="f-notes">Notes internes</label>
+  <textarea class="textarea" id="f-notes" name="notes" maxlength="5000">{c.notes ?? ''}</textarea>
+</div>

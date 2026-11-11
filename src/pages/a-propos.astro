@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import CTABand from '../components/CTABand.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../config/site';
+
+const values = [
+  { icon: 'tag', t: 'Transparence', d: 'Nos prix sont publiés. Le devis détaille chaque ligne avant de commencer, et nous annonçons à l’avance tout cas particulier.' },
+  { icon: 'chat', t: 'Disponibilité', d: `Un conseiller qui connaît votre dossier répond en ${site.responseTime}, sur le canal que vous préférez.` },
+  { icon: 'shield', t: 'Rigueur', d: 'Des statuts rédigés pour votre activité, pas copiés d’un modèle. Chaque dossier est relu avant dépôt.' },
+  { icon: 'refresh', t: 'Continuité', d: 'Après la création, nous restons à vos côtés : domiciliation, comptabilité, modifications juridiques.' },
+];
+---
+
+<BaseLayout
+  title="À Propos : Notre Méthode et Nos Engagements"
+  description={`${site.name} accompagne les entrepreneurs au Maroc dans la création et la gestion de leur société : prix affichés, démarches à distance, un interlocuteur dédié.`}
+  breadcrumbs={[{ name: 'À propos', href: '/a-propos/' }]}>
+  <PageHero
+    eyebrow="À propos"
+    title='Créer son entreprise devrait être <span class="hl">simple</span>'
+    lead={`${site.name} est né d’un constat : créer une société au Maroc reste trop souvent une suite de déplacements, de devis flous et d’attentes sans nouvelles. Nous avons voulu faire l’inverse.`}
+    breadcrumbs={[{ name: 'À propos', href: '/a-propos/' }]}
+  />
+
+  <section class="section">
+    <div class="container container--narrow prose">
+      <h2>Notre mission</h2>
+      <p>
+        Permettre à chaque entrepreneur, qu’il soit à Casablanca, à Agadir ou à l’étranger, de créer sa société en
+        quelques jours, sans se déplacer, en connaissant le prix exact dès le départ. Nous prenons en charge les
+        formalités pour que vous puissiez vous consacrer à vos clients.
+      </p>
+      <h2>Notre méthode</h2>
+      <p>
+        Chaque dossier est suivi par un conseiller unique, du premier échange à la remise de votre registre du commerce.
+        Vous êtes informé à chaque étape par WhatsApp. Après la création, la même équipe peut prendre en charge votre
+        domiciliation, votre comptabilité et les évolutions de votre société.
+      </p>
+      <!-- TODO : ajoutez ici la présentation de l’équipe (noms, photos, diplômes, années d’expérience). C’est un signal de confiance fort pour Google et pour vos clients. -->
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Nos engagements</p>
+        <h2>Ce que vous pouvez attendre de nous</h2>
+      </div>
+      <div class="grid grid-4">
+        {
+          values.map((v) => (
+            <div class="card">
+              <span class="icon-tile">
+                <Icon name={v.icon} />
+              </span>
+              <h3 class="mt-2">{v.t}</h3>
+              <p class="muted mt-1">{v.d}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <CTABand />
+</BaseLayout>

@@ -1,0 +1,314 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import DocEditor from '../../../components/admin/DocEditor.astro';
+import Icon from '../../../components/Icon.astro';
+import {
+  clientOptions, getDocument, updateDocument, setDevisStatus, convertToFacture, issueFacture, addPayment, deletePayment,
+  cancelFacture, deleteDocument, getSettings, isEditable, getClient,
+} from '../../../lib/db';
+import { linesFromForm, isYmd, go } from '../../../lib/forms';
+import { statusOf, paymentMethods } from '../../../config/admin';
+import { computeTotals, lineTotal } from '../../../lib/totals';
+import { mad, fmtDate, today, toCents, fromCents } from '../../../lib/money';
+import { site } from '../../../config/site';
+
+const id = Number(Astro.params.id);
+const self = `/admin/documents/${id}/`;
+let full = Number.isInteger(id) ? await getDocument(id) : undefined;
+if (!full) return Astro.redirect(go('/admin/documents/', { err: 'Document introuvable.' }));
+const settings = await getSettings();
+
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = String(fd.get('_action'));
+  try {
+    switch (action) {
+      case 'save': {
+        const clientId = Number(fd.get('client_id'));
+        const issue = String(fd.get('issue_date'));
+        const due = String(fd.get('due_date') ?? '');
+        const lines = linesFromForm(fd);
+        if (!clientId || !(await getClient(clientId))) throw new Error('Choisissez un client.');
+        if (!lines.length) throw new Error('Ajoutez au moins une ligne.');
+        await updateDocument(id, {
+          client_id: clientId,
+          issue_date: isYmd(issue) ? issue : today(),
+          due_date: isYmd(due) ? due : null,
+          subject: String(fd.get('subject') ?? '').trim().slice(0, 200) || null,
+          notes: String(fd.get('notes') ?? '').trim().slice(0, 3000) || null,
+        }, lines);
+        return Astro.redirect(go(self, { ok: 'Enregistré.' }));
+      }
+      case 'devis_status': {
+        const s = String(fd.get('status'));
+        if (['envoye', 'accepte', 'refuse', 'brouillon'].includes(s)) await setDevisStatus(id, s as 'envoye');
+        return Astro.redirect(go(self, { ok: 'Statut du devis mis à jour.' }));
+      }
+      case 'convert': {
+        const fid = await convertToFacture(id);
+        return Astro.redirect(go(`/admin/documents/${fid}/`, { ok: 'Facture créée à partir du devis (brouillon). Vérifiez-la puis émettez-la.' }));
+      }
+      case 'issue': {
+        const number = await issueFacture(id, Number(settings.payment_due) || 0);
+        return Astro.redirect(go(self, { ok: `Facture ${number} émise. Elle n’est plus modifiable.` }));
+      }
+      case 'payment': {
+        const date = String(fd.get('date'));
+        await addPayment(id, {
+          amount: toCents(fd.get('amount')),
+          date: isYmd(date) ? date : today(),
+          method: String(fd.get('method') ?? '').slice(0, 40) || undefined,
+          reference: String(fd.get('reference') ?? '').trim().slice(0, 120) || undefined,
+        });
+        return Astro.redirect(go(self, { ok: 'Paiement enregistré.' }));
+      }
+      case 'del_payment': {
+        const pid = Number(fd.get('payment_id'));
+        if (full.payments.some((p) => p.id === pid)) await deletePayment(pid);
+        return Astro.redirect(go(self, { ok: 'Paiement supprimé.' }));
+      }
+      case 'cancel': {
+        const reason = String(fd.get('reason') ?? '').trim().slice(0, 300);
+        if (!reason) throw new Error('Indiquez le motif d’annulation.');
+        await cancelFacture(id, reason);
+        return Astro.redirect(go(self, { ok: 'Facture annulée.' }));
+      }
+      case 'delete': {
+        const clientId = full.doc.client_id;
+        if (!(await deleteDocument(id))) throw new Error('Une facture émise ne peut pas être supprimée (vous pouvez l’annuler).');
+        return Astro.redirect(go(`/admin/clients/${clientId}/`, { ok: 'Document supprimé.' }));
+      }
+    }
+  } catch (e) {
+    return Astro.redirect(go(self, { err: (e as Error).message }));
+  }
+}
+
+full = (await getDocument(id))!;
+const { doc, client, lines, payments, source, derived } = full;
+const st = statusOf(doc.type, doc.status);
+const editable = isEditable(doc);
+const t = computeTotals(lines);
+const label = doc.type === 'devis' ? 'Devis' : 'Facture';
+const title = `${label} ${doc.number ?? '(brouillon)'}`;
+const clients = editable ? await clientOptions() : [];
+const remaining = doc.total_ttc - doc.paid;
+
+const waNumber = (() => {
+  let d = (client.phone ?? '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.length === 10 && d.startsWith('0')) d = '212' + d.slice(1);
+  return d.length >= 11 ? d : '';
+})();
+const waText = `Bonjour ${client.name.split(' ')[0]}, veuillez trouver ci-joint votre ${doc.type === 'devis' ? 'devis' : 'facture'} ${doc.number ?? ''} d’un montant de ${mad(doc.total_ttc).replace(/ /g, ' ')} TTC.${doc.type === 'facture' && remaining > 0 ? ` Reste à régler : ${mad(remaining).replace(/ /g, ' ')}.` : ''}\nNous restons à votre disposition.\n— ${site.name}`;
+---
+
+<AdminLayout title={title} active={doc.type === 'devis' ? 'devis' : 'factures'} crumb={{ label: client.name, href: `/admin/clients/${client.id}/` }}>
+  <Fragment slot="actions">
+    <span class={`a-badge tone-${st.tone}`}>{st.label}</span>
+    <a class="btn btn--ghost btn--sm" href={`${self}imprimer/`} target="_blank" rel="noopener"><Icon name="file" />Imprimer / PDF</a>
+    {waNumber && <a class="btn btn--wa btn--sm" href={`https://wa.me/${waNumber}?text=${encodeURIComponent(waText)}`} target="_blank" rel="noopener"><Icon name="whatsapp" />WhatsApp</a>}
+  </Fragment>
+
+  <div class="a-split">
+    <div>
+      {
+        editable ? (
+          <form method="post" class="a-card a-form">
+            <input type="hidden" name="_action" value="save" />
+            <DocEditor
+              type={doc.type}
+              clients={clients}
+              clientId={doc.client_id}
+              issueDate={doc.issue_date}
+              dueDate={doc.due_date}
+              subject={doc.subject}
+              notes={doc.notes}
+              lines={lines}
+              defaultVat={Number(settings.default_vat)}
+              submitLabel="Enregistrer les modifications"
+            />
+          </form>
+        ) : (
+          <section class="a-card">
+            {doc.subject && <p class="subject"><strong>Objet :</strong> {doc.subject}</p>}
+            <div class="a-table-wrap">
+              <table class="a-table">
+                <thead>
+                  <tr><th>Désignation</th><th class="num">Qté</th><th class="num">P.U. HT</th><th class="num">TVA</th><th class="num">Total HT</th></tr>
+                </thead>
+                <tbody>
+                  {lines.map((l) => (
+                    <tr>
+                      <td class="desc">{l.description}</td>
+                      <td class="num">{l.qty}</td>
+                      <td class="num">{mad(l.unit_price)}</td>
+                      <td class="num">{l.vat_rate} %</td>
+                      <td class="num">{mad(lineTotal(l))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div class="totals mt-3">
+              <div><span>Total HT</span><strong>{mad(t.ht)}</strong></div>
+              {t.vat.map((v) => <div class="muted"><span>TVA {v.rate} %</span><span>{mad(v.amount)}</span></div>)}
+              <div class="ttc"><span>Total TTC</span><span>{mad(t.ttc)}</span></div>
+            </div>
+            {doc.notes && <p class="muted-box mt-3">{doc.notes}</p>}
+          </section>
+        )
+      }
+
+      {
+        doc.type === 'facture' && doc.number && (
+          <section class="a-card">
+            <h2>Paiements</h2>
+            {payments.length === 0 ? (
+              <p class="muted small">Aucun paiement enregistré.</p>
+            ) : (
+              <table class="a-table">
+                <thead><tr><th>Date</th><th>Mode</th><th>Référence</th><th class="num">Montant</th><th></th></tr></thead>
+                <tbody>
+                  {payments.map((p) => (
+                    <tr>
+                      <td>{fmtDate(p.date)}</td>
+                      <td>{p.method ?? '—'}</td>
+                      <td>{p.reference ?? '—'}</td>
+                      <td class="num">{mad(p.amount)}</td>
+                      <td class="num">
+                        <form method="post" class="inline-form" onsubmit="return confirm('Supprimer ce paiement ?')">
+                          <input type="hidden" name="_action" value="del_payment" />
+                          <input type="hidden" name="payment_id" value={p.id} />
+                          <button class="icon-btn" type="submit" aria-label="Supprimer le paiement"><Icon name="x" size={14} /></button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {['emise', 'partielle'].includes(doc.status) && (
+              <form method="post" class="a-form mt-3 pay-form">
+                <input type="hidden" name="_action" value="payment" />
+                <div class="row">
+                  <div class="field"><label for="p-amount">Montant reçu (MAD)</label><input class="input" id="p-amount" name="amount" inputmode="decimal" required value={fromCents(remaining)} /></div>
+                  <div class="field"><label for="p-date">Date</label><input class="input" id="p-date" name="date" type="date" required value={today()} /></div>
+                  <div class="field"><label for="p-method">Mode</label><select class="select" id="p-method" name="method">{paymentMethods.map((m) => <option>{m}</option>)}</select></div>
+                  <div class="field"><label for="p-ref">Référence</label><input class="input" id="p-ref" name="reference" maxlength="120" placeholder="N° de virement, chèque…" /></div>
+                </div>
+                <div><button class="btn btn--primary btn--xs" type="submit"><Icon name="check" />Enregistrer le paiement</button></div>
+              </form>
+            )}
+          </section>
+        )
+      }
+    </div>
+
+    <aside>
+      <section class="a-card">
+        <h2>Récapitulatif</h2>
+        <dl class="dl">
+          <dt>Client</dt><dd><a href={`/admin/clients/${client.id}/`}>{client.name}</a>{client.company && <><br /><span class="muted">{client.company}</span></>}</dd>
+          <dt>Numéro</dt><dd>{doc.number ?? 'Attribué à l’émission'}</dd>
+          <dt>Date</dt><dd>{fmtDate(doc.issue_date)}</dd>
+          <dt>{doc.type === 'devis' ? 'Validité' : 'Échéance'}</dt><dd>{fmtDate(doc.due_date)}</dd>
+          <dt>Total TTC</dt><dd><strong>{mad(doc.total_ttc)}</strong></dd>
+          {doc.type === 'facture' && doc.number && <><dt>Payé</dt><dd>{mad(doc.paid)}</dd><dt>Reste dû</dt><dd><strong>{mad(Math.max(0, remaining))}</strong></dd></>}
+          {source && <><dt>Issue du devis</dt><dd><a href={`/admin/documents/${source.id}/`}>{source.number}</a></dd></>}
+          {derived.length > 0 && <><dt>Facture</dt><dd>{derived.map((d) => <a href={`/admin/documents/${d.id}/`}>{d.number ?? 'Brouillon'}</a>)}</dd></>}
+        </dl>
+      </section>
+
+      <section class="a-card">
+        <h2>Actions</h2>
+        <div class="act-list">
+          {
+            doc.type === 'devis' && (
+              <>
+                {doc.status === 'brouillon' && (
+                  <form method="post"><input type="hidden" name="_action" value="devis_status" /><input type="hidden" name="status" value="envoye" />
+                    <button class="btn btn--dark btn--sm btn--block" type="submit">Marquer comme envoyé</button></form>
+                )}
+                {['brouillon', 'envoye'].includes(doc.status) && (
+                  <div class="two">
+                    <form method="post"><input type="hidden" name="_action" value="devis_status" /><input type="hidden" name="status" value="accepte" />
+                      <button class="btn btn--ghost btn--sm btn--block" type="submit">Accepté</button></form>
+                    <form method="post"><input type="hidden" name="_action" value="devis_status" /><input type="hidden" name="status" value="refuse" />
+                      <button class="btn btn--ghost btn--sm btn--block" type="submit">Refusé</button></form>
+                  </div>
+                )}
+                {doc.status !== 'refuse' && derived.length === 0 && (
+                  <form method="post"><input type="hidden" name="_action" value="convert" />
+                    <button class="btn btn--primary btn--sm btn--block" type="submit"><Icon name="arrow" />Transformer en facture</button></form>
+                )}
+                {['accepte', 'refuse'].includes(doc.status) && (
+                  <form method="post"><input type="hidden" name="_action" value="devis_status" /><input type="hidden" name="status" value="brouillon" />
+                    <button class="btn btn--ghost btn--xs btn--block" type="submit">Rouvrir le devis</button></form>
+                )}
+              </>
+            )
+          }
+          {
+            doc.type === 'facture' && doc.status === 'brouillon' && (
+              <form method="post" onsubmit="return confirm('Émettre la facture ? Elle recevra un numéro définitif et ne pourra plus être modifiée.')">
+                <input type="hidden" name="_action" value="issue" />
+                <button class="btn btn--primary btn--sm btn--block" type="submit"><Icon name="check" />Émettre la facture</button>
+                <p class="small muted mt-1">Attribue le numéro définitif et verrouille la facture.</p>
+              </form>
+            )
+          }
+          {
+            doc.type === 'facture' && doc.status === 'emise' && doc.paid === 0 && (
+              <details>
+                <summary class="btn btn--ghost btn--xs">Annuler la facture</summary>
+                <form method="post" class="a-form mt-2">
+                  <input type="hidden" name="_action" value="cancel" />
+                  <input class="input" name="reason" required maxlength="300" placeholder="Motif (ex. : erreur de montant)" aria-label="Motif" />
+                  <button class="btn btn--danger btn--xs" type="submit">Confirmer l’annulation</button>
+                </form>
+              </details>
+            )
+          }
+          {
+            (doc.type === 'devis' || !doc.number) && (
+              <form method="post" onsubmit="return confirm('Supprimer définitivement ce document ?')">
+                <input type="hidden" name="_action" value="delete" />
+                <button class="btn btn--danger btn--xs btn--block" type="submit">Supprimer</button>
+              </form>
+            )
+          }
+        </div>
+      </section>
+    </aside>
+  </div>
+</AdminLayout>
+
+<style>
+  .subject {
+    margin-bottom: 14px;
+  }
+  td.desc {
+    white-space: pre-line;
+  }
+  .act-list {
+    display: grid;
+    gap: 8px;
+  }
+  .two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  details summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+  .totals .muted {
+    color: var(--ink-500);
+  }
+</style>

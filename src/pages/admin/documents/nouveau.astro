@@ -1,0 +1,73 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import DocEditor from '../../../components/admin/DocEditor.astro';
+import { clientOptions, createDocument, getSettings, getClient, type Line } from '../../../lib/db';
+import { linesFromForm, isYmd, go } from '../../../lib/forms';
+import { today, addDays } from '../../../lib/money';
+
+const type = Astro.url.searchParams.get('type') === 'facture' ? 'facture' : 'devis';
+const preClient = Number(Astro.url.searchParams.get('client')) || null;
+const [settings, clients, pre] = await Promise.all([getSettings(), clientOptions(), preClient ? getClient(preClient) : Promise.resolve(undefined)]);
+
+let error = '';
+let form: { client_id: number | null; issue_date: string; due_date: string | null; subject: string | null; notes: string | null; lines: Line[] } = {
+  client_id: preClient,
+  issue_date: today(),
+  due_date: type === 'devis' ? addDays(today(), Number(settings.devis_validity) || 30) : null,
+  subject: pre?.service ?? null,
+  notes: null,
+  lines: [],
+};
+
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const clientId = Number(fd.get('client_id'));
+  const issue = String(fd.get('issue_date'));
+  const due = String(fd.get('due_date') ?? '');
+  const lines = linesFromForm(fd);
+  form = {
+    client_id: clientId || null,
+    issue_date: isYmd(issue) ? issue : today(),
+    due_date: isYmd(due) ? due : null,
+    subject: String(fd.get('subject') ?? '').trim().slice(0, 200) || null,
+    notes: String(fd.get('notes') ?? '').trim().slice(0, 3000) || null,
+    lines,
+  };
+  if (!clientId || !(await getClient(clientId))) error = 'Choisissez un client.';
+  else if (!lines.length) error = 'Ajoutez au moins une ligne.';
+  else {
+    const id = await createDocument(type, { ...form, client_id: clientId }, lines);
+    return Astro.redirect(go(`/admin/documents/${id}/`, { ok: type === 'devis' ? 'Devis créé.' : 'Brouillon de facture créé. Vérifiez-le puis cliquez sur « Émettre la facture ».' }));
+  }
+}
+---
+
+<AdminLayout
+  title={type === 'devis' ? 'Nouveau devis' : 'Nouvelle facture'}
+  active={type === 'devis' ? 'devis' : 'factures'}
+  crumb={{ label: type === 'devis' ? 'Devis' : 'Factures', href: `/admin/documents/?type=${type}` }}
+  error={error || null}>
+  {
+    clients.length === 0 ? (
+      <div class="a-card a-empty">
+        Créez d’abord un client. <a href="/admin/clients/nouveau/">Nouveau client</a>
+      </div>
+    ) : (
+      <form method="post" class="a-card a-form">
+        <DocEditor
+          type={type}
+          clients={clients}
+          clientId={form.client_id}
+          issueDate={form.issue_date}
+          dueDate={form.due_date}
+          subject={form.subject}
+          notes={form.notes}
+          lines={form.lines}
+          defaultVat={Number(settings.default_vat)}
+          submitLabel={type === 'devis' ? 'Créer le devis' : 'Enregistrer le brouillon'}
+        />
+      </form>
+    )
+  }
+</AdminLayout>

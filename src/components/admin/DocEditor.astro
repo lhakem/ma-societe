@@ -1,0 +1,268 @@
+---
+import Icon from '../Icon.astro';
+import type { Client, Line } from '../../lib/db';
+import { catalog, packs, site } from '../../config/site';
+import { vatRates } from '../../config/admin';
+import { computeTotals, lineTotal } from '../../lib/totals';
+import { mad, fromCents } from '../../lib/money';
+
+interface Props {
+  type: 'devis' | 'facture';
+  clients: Pick<Client, 'id' | 'name' | 'company'>[];
+  clientId?: number | null;
+  issueDate: string;
+  dueDate?: string | null;
+  subject?: string | null;
+  notes?: string | null;
+  lines: Line[];
+  defaultVat: number;
+  submitLabel: string;
+}
+const p = Astro.props;
+const dv = p.defaultVat;
+
+// Prestations prêtes à ajouter (prix du site, en centimes)
+const presets = [
+  ...packs.map((k) => ({ group: 'Packs', label: `Pack ${k.name}`, desc: `Pack ${k.name} : ${k.features.join(', ')}`, price: k.price * 100, vat: dv })),
+  ...Object.values(catalog.creation).map((c) => ({ group: 'Création', label: `Création ${c.label}`, desc: `Création ${c.label} : honoraires d’accompagnement et formalités`, price: c.price * 100, vat: dv })),
+  ...Object.entries(catalog.domiciliation).map(([m, pr]) => ({ group: 'Domiciliation', label: `Domiciliation ${m} mois`, desc: `Domiciliation du siège social ${m} mois : ${site.address.street}, ${site.address.city}`, price: pr * 100, vat: dv })),
+  ...Object.entries(catalog.comptabilite).map(([m, pr]) => ({ group: 'Comptabilité', label: `Comptabilité ${m} mois`, desc: `Tenue de comptabilité et déclarations fiscales : ${m} mois`, price: pr * 100, vat: dv })),
+  ...Object.entries(catalog.comptabiliteAE).map(([m, pr]) => ({ group: 'Comptabilité', label: `Déclarations AE ${m} mois`, desc: `Déclarations auto-entrepreneur : ${m} mois`, price: pr * 100, vat: dv })),
+  ...Object.values(catalog.extras).filter((e) => e.price > 0).map((e) => ({ group: 'Options', label: e.label, desc: e.label, price: e.price * 100, vat: dv })),
+  { group: 'Juridique', label: 'Modification de statuts', desc: 'Modification de statuts : rédaction des actes et formalités', price: catalog.modificationFrom * 100, vat: dv },
+  { group: 'Juridique', label: 'Dissolution et liquidation', desc: 'Dissolution anticipée et liquidation amiable', price: catalog.dissolutionFrom * 100, vat: dv },
+  { group: 'Débours', label: 'Frais administratifs (débours, sans TVA)', desc: 'Frais administratifs avancés pour le compte du client (débours)', price: 0, vat: 0 },
+];
+const groups = [...new Set(presets.map((x) => x.group))];
+const rows: Line[] = p.lines.length ? p.lines : [{ description: '', qty: 1, unit_price: 0, vat_rate: dv }];
+const t = computeTotals(rows);
+---
+
+<div class="doc-editor" data-doc-editor data-presets={JSON.stringify(presets)} data-default-vat={dv}>
+  <div class="row">
+    <div class="field">
+      <label for="d-client">Client *</label>
+      <select class="select" id="d-client" name="client_id" required>
+        <option value="">Choisir un client…</option>
+        {p.clients.map((c) => <option value={c.id} selected={c.id === p.clientId}>{c.name}{c.company ? ` — ${c.company}` : ''}</option>)}
+      </select>
+    </div>
+    <div class="field">
+      <label for="d-date">{p.type === 'devis' ? 'Date du devis' : 'Date (fixée à l’émission)'}</label>
+      <input class="input" id="d-date" name="issue_date" type="date" required value={p.issueDate} />
+    </div>
+    <div class="field">
+      <label for="d-due">{p.type === 'devis' ? 'Valable jusqu’au' : 'Échéance de paiement'}</label>
+      <input class="input" id="d-due" name="due_date" type="date" value={p.dueDate ?? ''} />
+    </div>
+  </div>
+  <div class="field">
+    <label for="d-subject">Objet</label>
+    <input class="input" id="d-subject" name="subject" maxlength="200" value={p.subject ?? ''} placeholder="Ex. : Création SARL AU « Atlas Digital »" />
+  </div>
+
+  <div class="lines-wrap">
+    <table class="lines">
+      <thead>
+        <tr>
+          <th>Désignation</th>
+          <th class="c-qty">Qté</th>
+          <th class="c-price">Prix unit. HT</th>
+          <th class="c-vat">TVA</th>
+          <th class="c-total">Total HT</th>
+          <th class="c-del"><span class="sr-only">Supprimer</span></th>
+        </tr>
+      </thead>
+      <tbody data-lines>
+        {
+          rows.map((l) => (
+            <tr data-line>
+              <td class="c-desc"><textarea class="input" name="desc" rows="1" maxlength="1000" placeholder="Désignation de la prestation" aria-label="Désignation">{l.description}</textarea></td>
+              <td class="c-qty"><input class="input" name="qty" inputmode="decimal" value={String(l.qty)} aria-label="Quantité" /></td>
+              <td class="c-price"><input class="input" name="price" inputmode="decimal" value={fromCents(l.unit_price)} aria-label="Prix unitaire HT" /></td>
+              <td class="c-vat">
+                <select class="select" name="vat" aria-label="TVA">
+                  {vatRates.map((r) => <option value={r} selected={r === l.vat_rate}>{r} %</option>)}
+                </select>
+              </td>
+              <td class="c-total" data-line-total>{mad(lineTotal(l))}</td>
+              <td class="c-del"><button type="button" class="icon-btn" data-del aria-label="Supprimer la ligne"><Icon name="x" size={16} /></button></td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="editor-bar">
+    <div class="a-actions">
+      <button type="button" class="btn btn--ghost btn--xs" data-add><Icon name="plus" />Ligne vide</button>
+      <select class="select preset" data-preset aria-label="Ajouter une prestation du catalogue">
+        <option value="">+ Ajouter une prestation du catalogue…</option>
+        {groups.map((g) => (
+          <optgroup label={g}>
+            {presets.map((x, i) => x.group === g && <option value={i}>{x.label}{x.price ? ` (${(x.price / 100).toLocaleString('fr-FR')} MAD)` : ''}</option>)}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+    <div class="totals" data-totals>
+      <div><span>Total HT</span><strong data-t-ht>{mad(t.ht)}</strong></div>
+      <div data-t-vat>{t.vat.filter((v) => v.rate > 0).map((v) => <div><span>TVA {v.rate} %</span><span>{mad(v.amount)}</span></div>)}</div>
+      <div class="ttc"><span>Total TTC</span><span data-t-ttc>{mad(t.ttc)}</span></div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="d-notes">Conditions / remarques (imprimées sur le document)</label>
+    <textarea class="textarea" id="d-notes" name="notes" maxlength="3000" placeholder="Ex. : Acompte de 50 % à la signature.">{p.notes ?? ''}</textarea>
+  </div>
+  <div class="a-actions">
+    <button class="btn btn--primary btn--sm" type="submit">{p.submitLabel}</button>
+  </div>
+</div>
+
+<template id="line-tpl">
+  <tr data-line>
+    <td class="c-desc"><textarea class="input" name="desc" rows="1" maxlength="1000" placeholder="Désignation de la prestation" aria-label="Désignation"></textarea></td>
+    <td class="c-qty"><input class="input" name="qty" inputmode="decimal" value="1" aria-label="Quantité" /></td>
+    <td class="c-price"><input class="input" name="price" inputmode="decimal" value="0.00" aria-label="Prix unitaire HT" /></td>
+    <td class="c-vat">
+      <select class="select" name="vat" aria-label="TVA">{vatRates.map((r) => <option value={r}>{r} %</option>)}</select>
+    </td>
+    <td class="c-total" data-line-total></td>
+    <td class="c-del"><button type="button" class="icon-btn" data-del aria-label="Supprimer la ligne"><Icon name="x" size={16} /></button></td>
+  </tr>
+</template>
+
+<script>
+  import { computeTotals, lineTotal } from '../../lib/totals';
+
+  const toCents = (v: string) => {
+    const n = Number(String(v).replace(/[\s  ]/g, '').replace(',', '.'));
+    return Number.isFinite(n) ? Math.round(n * 100) : 0;
+  };
+  const fmt = (c: number) =>
+    new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(c / 100) + ' MAD';
+
+  document.querySelectorAll<HTMLElement>('[data-doc-editor]').forEach((root) => {
+    const body = root.querySelector<HTMLTableSectionElement>('[data-lines]')!;
+    const tpl = document.getElementById('line-tpl') as HTMLTemplateElement;
+    const presets = JSON.parse(root.dataset.presets || '[]') as { desc: string; price: number; vat: number }[];
+    const defaultVat = root.dataset.defaultVat || '20';
+
+    const read = (tr: Element) => ({
+      qty: Number(((tr.querySelector('[name=qty]') as HTMLInputElement).value || '0').replace(',', '.')) || 0,
+      unit_price: toCents((tr.querySelector('[name=price]') as HTMLInputElement).value),
+      vat_rate: Number((tr.querySelector('[name=vat]') as HTMLSelectElement).value),
+    });
+
+    const recalc = () => {
+      const rows = [...body.querySelectorAll('[data-line]')];
+      const lines = rows.map((tr) => {
+        const l = read(tr);
+        tr.querySelector('[data-line-total]')!.textContent = fmt(lineTotal(l));
+        return l;
+      });
+      const t = computeTotals(lines);
+      root.querySelector('[data-t-ht]')!.textContent = fmt(t.ht);
+      root.querySelector('[data-t-ttc]')!.textContent = fmt(t.ttc);
+      const vatBox = root.querySelector('[data-t-vat]')!;
+      vatBox.replaceChildren(
+        ...t.vat.filter((v) => v.rate > 0).map((v) => {
+          const d = document.createElement('div');
+          const a = document.createElement('span');
+          const b = document.createElement('span');
+          a.textContent = `TVA ${v.rate} %`;
+          b.textContent = fmt(v.amount);
+          d.append(a, b);
+          return d;
+        }),
+      );
+    };
+
+    const autosize = (el: HTMLTextAreaElement) => {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 2 + 'px';
+    };
+    body.querySelectorAll('textarea').forEach(autosize);
+
+    const addRow = (desc = '', price = 0, vat = defaultVat) => {
+      const tr = tpl.content.firstElementChild!.cloneNode(true) as HTMLTableRowElement;
+      (tr.querySelector('[name=desc]') as HTMLTextAreaElement).value = desc;
+      (tr.querySelector('[name=price]') as HTMLInputElement).value = (price / 100).toFixed(2);
+      (tr.querySelector('[name=vat]') as HTMLSelectElement).value = String(vat);
+      // remplace une ligne vide unique plutôt que d'en ajouter
+      const rows = body.querySelectorAll('[data-line]');
+      const only = rows.length === 1 ? rows[0] : null;
+      if (only && !(only.querySelector('[name=desc]') as HTMLTextAreaElement).value.trim() && desc) only.replaceWith(tr);
+      else body.append(tr);
+      autosize(tr.querySelector('textarea')!);
+      recalc();
+      return tr;
+    };
+
+    root.querySelector('[data-add]')!.addEventListener('click', () => {
+      (addRow().querySelector('[name=desc]') as HTMLTextAreaElement).focus();
+    });
+    root.querySelector<HTMLSelectElement>('[data-preset]')!.addEventListener('change', (e) => {
+      const sel = e.target as HTMLSelectElement;
+      const p = presets[Number(sel.value)];
+      if (p) addRow(p.desc, p.price, p.vat);
+      sel.value = '';
+    });
+    body.addEventListener('click', (e) => {
+      const btn = (e.target as Element).closest('[data-del]');
+      if (!btn) return;
+      if (body.querySelectorAll('[data-line]').length > 1) btn.closest('tr')!.remove();
+      else (btn.closest('tr')!.querySelector('[name=desc]') as HTMLTextAreaElement).value = '';
+      recalc();
+    });
+    body.addEventListener('input', (e) => {
+      const el = e.target as HTMLElement;
+      if (el.tagName === 'TEXTAREA') autosize(el as HTMLTextAreaElement);
+      recalc();
+    });
+    body.addEventListener('change', recalc);
+  });
+</script>
+
+<style>
+  .doc-editor {
+    display: grid;
+    gap: 14px;
+  }
+  .lines-wrap {
+    margin-top: 6px;
+  }
+  .editor-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .preset {
+    width: auto;
+    max-width: 340px;
+    min-height: 34px;
+    padding: 4px 36px 4px 12px;
+    font-size: 0.85rem;
+    border-radius: 99px;
+  }
+  [data-t-vat] {
+    display: grid;
+    justify-content: normal;
+    gap: 6px;
+  }
+  [data-t-vat]:empty {
+    display: none;
+  }
+  [data-t-vat] > :global(div) {
+    display: flex;
+    justify-content: space-between;
+    color: var(--ink-500);
+  }
+</style>

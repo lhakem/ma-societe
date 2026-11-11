@@ -1,0 +1,180 @@
+---
+import Icon from './Icon.astro';
+import { packs, packValue, packNote, formatMAD, site, whatsappLink } from '../config/site';
+---
+
+<div class="packs">
+  {
+    packs.map((p) => {
+      const value = packValue(p);
+      const saving = value - p.price;
+      return (
+        <article class:list={['pack', { 'pack--popular': p.popular }]} aria-labelledby={`pack-${p.id}`}>
+          {p.popular && <span class="pack-flag">Le plus choisi</span>}
+          <header>
+            <h3 id={`pack-${p.id}`}>Pack {p.name}</h3>
+            <p class="pack-tagline">{p.tagline}</p>
+          </header>
+          <div class="pack-price">
+            <span class="amount">{formatMAD(p.price).replace(/\s*MAD$/, '')}</span>
+            <span class="cur">MAD</span>
+          </div>
+          {saving > 0 && (
+            <p class="pack-value">
+              <s>{formatMAD(value)}</s> à la carte · <strong>{formatMAD(saving)} d’économie</strong>
+            </p>
+          )}
+          <ul class="check-list pack-list">
+            {p.features.map((f) => (
+              <li>{f}</li>
+            ))}
+          </ul>
+          {p.notIncluded && (
+            <ul class="check-list x-list pack-list">
+              {p.notIncluded.map((f) => (
+                <li>{f}</li>
+              ))}
+            </ul>
+          )}
+          <div class="pack-cta">
+            <a
+              class:list={['btn', 'btn--block', p.popular ? 'btn--primary' : 'btn--dark']}
+              href={whatsappLink(`Bonjour, je suis intéressé(e) par le pack ${p.name} (${formatMAD(p.price)}).`)}
+              target="_blank"
+              rel="noopener">
+              Choisir ce pack
+              <Icon name="arrow" />
+            </a>
+          </div>
+        </article>
+      );
+    })
+  }
+</div>
+<p class="packs-note small muted">
+  <Icon name="info" size={16} />
+  {site.priceNote}. {packNote}
+</p>
+
+<style>
+  .packs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    align-items: stretch;
+  }
+  .pack {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 30px 28px 28px;
+  }
+  .pack--popular {
+    background: var(--night);
+    border-color: var(--night);
+    color: #c9d0ea;
+    box-shadow: var(--shadow-lg);
+  }
+  .pack--popular h3,
+  .pack--popular .amount,
+  .pack--popular .pack-list li {
+    color: #fff;
+  }
+  .pack--popular .pack-tagline,
+  .pack--popular .pack-value,
+  .pack--popular .cur {
+    color: #aab3d4;
+  }
+  .pack--popular .pack-value strong {
+    color: var(--saffron);
+  }
+  .pack--popular .x-list li {
+    color: #7b84a8;
+  }
+  .pack-flag {
+    position: absolute;
+    top: -13px;
+    left: 28px;
+    background: var(--saffron);
+    color: #3d2600;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  h3 {
+    font-size: 1.35rem;
+  }
+  .pack-tagline {
+    margin-top: 6px;
+    color: var(--ink-500);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    min-height: 2.9em;
+  }
+  .pack-price {
+    margin-top: 22px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .amount {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: var(--ink-900);
+    line-height: 1;
+  }
+  .cur {
+    font-weight: 600;
+    color: var(--ink-500);
+  }
+  .pack-value {
+    margin-top: 8px;
+    font-size: 0.86rem;
+    color: var(--ink-500);
+  }
+  .pack-value strong {
+    color: var(--mint);
+    font-weight: 600;
+  }
+  .pack-list {
+    margin-top: 24px;
+    font-size: 0.95rem;
+    gap: 9px;
+  }
+  .pack-list li {
+    color: var(--ink-700);
+  }
+  .x-list {
+    margin-top: 10px;
+  }
+  .pack-cta {
+    margin-top: auto;
+    padding-top: 28px;
+  }
+  .packs-note {
+    margin-top: 20px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: center;
+  }
+  .packs-note :global(svg) {
+    flex: none;
+    margin-top: 2px;
+  }
+  @media (max-width: 960px) {
+    .packs {
+      grid-template-columns: 1fr;
+      max-width: 520px;
+      margin-inline: auto;
+    }
+  }
+</style>

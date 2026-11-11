@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import { site } from '../config/site';
+const l = site.legal;
+const domain = site.url.replace('https://', '');
+const addr = [site.address.street, [site.address.postalCode, site.address.city].filter(Boolean).join(' '), 'Maroc'].join(', ');
+const ids = [
+  { k: 'Identifiant fiscal (IF)', v: l.if },
+  { k: 'Identifiant commun de l’entreprise (ICE)', v: l.ice },
+  { k: 'Registre du commerce', v: l.rc },
+  { k: 'Taxe professionnelle', v: l.tp },
+].filter((i) => i.v);
+---
+
+<BaseLayout
+  title="Mentions Légales"
+  description={`Mentions légales du site ${domain} : éditeur, identifiants, hébergeur, propriété intellectuelle.`}
+  breadcrumbs={[{ name: 'Mentions légales', href: '/mentions-legales/' }]}>
+  <PageHero title="Mentions légales" breadcrumbs={[{ name: 'Mentions légales', href: '/mentions-legales/' }]} />
+  <section class="section">
+    <div class="container container--narrow prose">
+      <h2>Éditeur du site</h2>
+      <p>
+        Le site {domain} est édité par <strong>{site.legalName}</strong> (nom commercial : {site.name}){l.capital && `, au capital de ${l.capital}`},
+        dont le siège est situé {addr}.
+      </p>
+      <ul>
+        {ids.map((i) => <li>{i.k} : {i.v}</li>)}
+        <li>Téléphone : {site.phoneDisplay} · E-mail : {site.email}</li>
+        <li>Directeur de la publication : {l.director}</li>
+      </ul>
+
+      <h2>Hébergement</h2>
+      <p>{l.host}</p>
+
+      <h2>Propriété intellectuelle</h2>
+      <p>
+        L’ensemble des contenus de ce site (textes, graphismes, logo, guides) est la propriété de {site.legalName}. Toute
+        reproduction, totale ou partielle, sans autorisation écrite préalable est interdite.
+      </p>
+
+      <h2>Responsabilité</h2>
+      <p>
+        Les informations publiées sur ce site, notamment dans les guides, sont fournies à titre d’information générale.
+        Elles ne constituent pas un conseil juridique ou fiscal personnalisé. Malgré le soin apporté à leur mise à jour,
+        la réglementation évolue : {site.name} ne saurait être tenue responsable d’une décision prise sur la seule base
+        de ces contenus.
+      </p>
+
+      <h2>Données personnelles</h2>
+      <p>
+        Le traitement de vos données est décrit dans notre <a href="/politique-de-confidentialite/">politique de
+        confidentialité</a>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

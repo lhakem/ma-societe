@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "masociete",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Base de données de l'espace admin (clients, devis, factures).
+  // Pas de "database_id" : Cloudflare crée la base automatiquement au premier déploiement.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "masociete"
+    }
+  ],
+
+  "observability": { "enabled": true }
+}

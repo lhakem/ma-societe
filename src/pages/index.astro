@@ -1,0 +1,630 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import ServiceGrid from '../components/ServiceGrid.astro';
+import Packs from '../components/Packs.astro';
+import Simulator from '../components/Simulator.astro';
+import Steps from '../components/Steps.astro';
+import Comparison from '../components/Comparison.astro';
+import CityGrid from '../components/CityGrid.astro';
+import FAQ from '../components/FAQ.astro';
+import CTABand from '../components/CTABand.astro';
+import GuideCard from '../components/GuideCard.astro';
+import { site, catalog, packs, formatMAD, whatsappLink, testimonials } from '../config/site';
+import { business, faq as faqSchema } from '../lib/schema';
+
+const minPrice = catalog.creation['sarl-au'].price;
+const featured = ['comment-creer-une-societe-au-maroc', 'sarl-ou-sarl-au', 'auto-entrepreneur-ou-societe'];
+const allGuides = await getCollection('guides');
+const guides = [
+  ...featured.map((id) => allGuides.find((g) => g.id === id)).filter((g) => g !== undefined),
+  ...allGuides.filter((g) => !featured.includes(g.id)),
+].slice(0, 3);
+
+const steps = [
+  {
+    title: 'Vous nous décrivez votre projet',
+    text: 'Par WhatsApp, téléphone ou formulaire : activité, associés, nom souhaité. Nous vous conseillons sur la forme juridique.',
+    meta: '15 minutes',
+  },
+  {
+    title: 'Vous envoyez vos documents',
+    text: 'Une copie de votre CIN (ou passeport) suffit pour démarrer. Nous réservons le nom et rédigeons vos statuts.',
+    meta: 'Jour 1',
+  },
+  {
+    title: 'Nous gérons les administrations',
+    text: 'Enregistrement, taxe professionnelle, identifiant fiscal, ICE, registre du commerce, annonce légale, CNSS.',
+    meta: 'Jours 2 à 8',
+  },
+  {
+    title: 'Vous recevez votre société',
+    text: 'Statuts, RC, attestation IF/ICE, dossier bancaire : tout arrive au format numérique, puis en original.',
+    meta: site.delai,
+  },
+];
+
+const faqs = [
+  {
+    q: 'Combien coûte la création d’une société au Maroc ?',
+    a: `Chez ${site.name}, la création d’une SARL AU commence à ${formatMAD(minPrice)} HT et nos packs tout compris démarrent à ${formatMAD(packs[0].price)} avec la domiciliation et le cachet. Le prix est fixé avant le début du dossier : vous savez exactement ce que vous payez. <a href="/tarifs/">Voir tous les tarifs</a>.`,
+  },
+  {
+    q: 'Combien de temps faut-il pour créer une SARL ?',
+    a: `Comptez en moyenne ${site.delai} entre la réception d’un dossier complet et l’obtention du registre du commerce. Le délai dépend surtout du tribunal de commerce compétent et de la disponibilité du nom choisi.`,
+  },
+  {
+    q: 'Quel est le capital minimum d’une SARL au Maroc ?',
+    a: 'Il n’y a plus de capital minimum légal pour une SARL ou une SARL AU : vous fixez librement son montant. Le dépôt du capital sur un compte bloqué n’est obligatoire que lorsqu’il dépasse 100 000 MAD.',
+  },
+  {
+    q: 'Dois-je me déplacer pour créer ma société ?',
+    a: 'Non. Toutes les démarches se font à distance. Selon votre dossier, la seule étape physique peut être la légalisation de votre signature sur les statuts, à faire dans le bureau de légalisation le plus proche de chez vous (ou au consulat si vous êtes à l’étranger).',
+  },
+  {
+    q: 'Quels documents faut-il fournir ?',
+    a: 'Pour démarrer : une copie de la CIN de chaque associé et du gérant (passeport pour les étrangers), trois propositions de nom, l’activité exercée et le montant du capital. Si vous avez déjà un local, ajoutez le contrat de bail ; sinon, notre domiciliation s’en charge. <a href="/guides/documents-creation-societe-maroc/">Liste complète des documents</a>.',
+  },
+  {
+    q: 'SARL ou SARL AU : que choisir ?',
+    a: 'Si vous créez seul, la SARL AU est la forme la plus simple. Si vous avez un ou plusieurs associés, il faut une SARL. Les deux protègent votre patrimoine personnel. <a href="/guides/sarl-ou-sarl-au/">Lire notre comparatif</a>.',
+  },
+  {
+    q: 'Un étranger peut-il créer une société au Maroc ?',
+    a: 'Oui. Une personne étrangère, résidente ou non, peut détenir 100 % d’une société marocaine. Nous créons régulièrement des sociétés pour des investisseurs étrangers et des Marocains résidant à l’étranger. <a href="/creation-societe-maroc-etranger/">En savoir plus</a>.',
+  },
+  {
+    q: 'Est-ce que vous vous occupez aussi de la comptabilité ?',
+    a: `Oui. Une fois la société créée, nous pouvons tenir votre comptabilité, faire vos déclarations de TVA et de CNSS et préparer le bilan annuel, dès ${formatMAD(catalog.comptabiliteMonthlyFrom)} par mois.`,
+  },
+];
+
+const admins = ['OMPIC', 'Direction générale des impôts', 'Tribunal de commerce', 'CNSS', 'Annonces légales', 'CRI'];
+---
+
+<BaseLayout
+  title={`Création de Société au Maroc en Ligne, Prix Fixe | ${site.name}`}
+  description={`Créez votre SARL, SARL AU ou auto-entreprise au Maroc sans vous déplacer : prix fixe dès ${formatMAD(minPrice)}, statuts, RC, ICE, CNSS, domiciliation et comptabilité.`}
+  schema={[business(), faqSchema(faqs)]}>
+  <!-- ============ HERO ============ -->
+  <section class="hero pattern-bg">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Création d’entreprise au Maroc · 100 % en ligne</p>
+        <h1>Créez votre société au Maroc <span class="hl">sans vous déplacer</span></h1>
+        <p class="lead">
+          SARL, SARL AU ou auto-entrepreneur : nous prenons en charge toutes les démarches, du certificat négatif au
+          registre du commerce, pour un prix fixe annoncé dès le départ.
+        </p>
+        <div class="btn-row hero-ctas">
+          <a class="btn btn--primary" href="#simulateur">Calculer mon prix <Icon name="arrow" /></a>
+          <a class="btn btn--ghost" href={whatsappLink()} target="_blank" rel="noopener">
+            <Icon name="whatsapp" />Parler à un conseiller
+          </a>
+        </div>
+        <ul class="hero-proof">
+          <li><Icon name="tag" size={20} /><span><strong>Dès {formatMAD(minPrice)}</strong> prix fixe affiché</span></li>
+          <li><Icon name="clock" size={20} /><span><strong>{site.delai}</strong> délai moyen</span></li>
+          <li><Icon name="chat" size={20} /><span><strong>Réponse rapide</strong> en {site.responseTime}</span></li>
+        </ul>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <div class="tracker">
+          <div class="tr-head">
+            <div>
+              <p class="tr-kicker">Exemple de suivi de dossier</p>
+              <p class="tr-name">Atlas Digital · SARL AU</p>
+            </div>
+            <span class="badge badge--mint"><span class="live"></span>En cours</span>
+          </div>
+          <div class="tr-bar"><span></span></div>
+          <ol class="tr-steps">
+            <li class="done"><span class="dot"><Icon name="check" size={13} /></span><div><strong>Certificat négatif</strong><small>Nom réservé auprès de l’OMPIC</small></div><time>J+1</time></li>
+            <li class="done"><span class="dot"><Icon name="check" size={13} /></span><div><strong>Statuts signés</strong><small>Rédigés pour votre activité</small></div><time>J+2</time></li>
+            <li class="done"><span class="dot"><Icon name="check" size={13} /></span><div><strong>Enregistrement et IF / ICE</strong><small>Direction générale des impôts</small></div><time>J+4</time></li>
+            <li class="active"><span class="dot"></span><div><strong>Registre du commerce</strong><small>Validation au tribunal</small></div><time>En cours</time></li>
+            <li><span class="dot"></span><div><strong>Annonce légale et CNSS</strong><small>Dernière étape</small></div><time>À venir</time></li>
+          </ol>
+          <div class="tr-msg">
+            <span class="avatar">MS</span>
+            <p>Bonne nouvelle : votre dossier est au tribunal. Vous recevez votre RC dans les prochains jours.</p>
+          </div>
+        </div>
+        <div class="chip chip--a"><Icon name="shield" size={18} />Statuts sur mesure</div>
+        <div class="chip chip--b"><Icon name="building" size={18} />Domiciliation incluse</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ADMINISTRATIONS ============ -->
+  <section class="admins" aria-label="Démarches prises en charge">
+    <div class="container admins-inner">
+      <p>Nous faisons les démarches pour vous auprès de :</p>
+      <ul>{admins.map((a) => <li>{a}</li>)}</ul>
+    </div>
+  </section>
+
+  <!-- ============ SERVICES ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Nos services</p>
+        <h2>De la création à la gestion, un seul interlocuteur</h2>
+        <p class="lead">
+          Choisissez la forme juridique adaptée à votre projet. Nous nous occupons ensuite de tout le reste : siège social,
+          comptabilité et modifications.
+        </p>
+      </div>
+      <ServiceGrid />
+    </div>
+  </section>
+
+  <!-- ============ ÉTAPES ============ -->
+  <section class="section section--night pattern-bg night-pattern">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Comment ça marche</p>
+        <h2>Votre société créée en 4 étapes</h2>
+        <p class="lead night-lead">
+          Vous n’avez pas à faire la queue dans les administrations. Vous suivez chaque étape sur WhatsApp, avec un
+          conseiller qui connaît votre dossier.
+        </p>
+      </div>
+      <Steps steps={steps} />
+    </div>
+  </section>
+
+  <!-- ============ PACKS ============ -->
+  <section class="section" id="packs">
+    <div class="container">
+      <div class="section-head section-head--center">
+        <p class="eyebrow">Tarifs</p>
+        <h2>Des packs clairs, sans frais cachés</h2>
+        <p class="lead">
+          Le prix affiché est le prix payé. Chaque pack indique ce qu’il contient, et ce qu’il ne contient pas.
+        </p>
+      </div>
+      <Packs />
+    </div>
+  </section>
+
+  <!-- ============ SIMULATEUR ============ -->
+  <section class="section section--alt" id="simulateur">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Simulateur</p>
+        <h2>Calculez le prix de votre création en 30 secondes</h2>
+        <p class="lead">Composez votre formule : le total se met à jour, et vous pouvez nous l’envoyer directement.</p>
+      </div>
+      <Simulator />
+    </div>
+  </section>
+
+  <!-- ============ COMPARAISON ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Pourquoi {site.name}</p>
+        <h2>Plus simple que de tout faire seul, plus clair qu’un cabinet classique</h2>
+      </div>
+      <Comparison />
+    </div>
+  </section>
+
+  {
+    testimonials.length > 0 && (
+      <section class="section section--alt">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Avis clients</p>
+            <h2>Ils ont créé leur société avec nous</h2>
+          </div>
+          <div class="grid grid-3">
+            {testimonials.map((t) => (
+              <figure class="card">
+                <blockquote>« {t.text} »</blockquote>
+                <figcaption class="mt-2 small muted">
+                  <strong>{t.name}</strong>
+                  {t.company && `, ${t.company}`} · {t.city}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ============ VILLES ============ -->
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Partout au Maroc</p>
+        <h2>Nous créons votre société dans toutes les villes</h2>
+        <p class="lead">
+          Nos bureaux sont à {site.address.city}, mais le dossier se fait à distance : votre société est immatriculée au
+          tribunal de commerce de la ville de votre siège.
+        </p>
+      </div>
+      <CityGrid />
+    </div>
+  </section>
+
+  <!-- ============ GUIDES ============ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head head-row">
+        <div>
+          <p class="eyebrow">Guides pratiques</p>
+          <h2>Tout comprendre avant de vous lancer</h2>
+        </div>
+        <a class="btn btn--ghost btn--sm" href="/guides/">Tous les guides <Icon name="arrow" /></a>
+      </div>
+      <div class="grid grid-3">
+        {guides.map((g) => <GuideCard guide={g} />)}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FAQ ============ -->
+  <section class="section section--alt">
+    <div class="container faq-grid">
+      <div class="section-head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Les questions qu’on nous pose le plus</h2>
+        <p class="lead">Vous ne trouvez pas votre réponse ? Écrivez-nous, un conseiller vous répond rapidement.</p>
+        <div class="btn-row mt-3">
+          <a class="btn btn--wa btn--sm" href={whatsappLink('Bonjour, j’ai une question sur la création de société.')} target="_blank" rel="noopener"><Icon name="whatsapp" />Poser ma question</a>
+          <a class="btn btn--ghost btn--sm" href="/faq/">Toute la FAQ</a>
+        </div>
+      </div>
+      <FAQ items={faqs} />
+    </div>
+  </section>
+
+  <CTABand />
+</BaseLayout>
+
+<style>
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: clamp(40px, 6vw, 88px) 0 clamp(56px, 7vw, 104px);
+    overflow: hidden;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(40px, 6vw, 80px);
+    align-items: center;
+  }
+  .hero h1 {
+    margin-top: 18px;
+  }
+  .hero .lead {
+    margin-top: 22px;
+    max-width: 580px;
+  }
+  .hero-ctas {
+    margin-top: 32px;
+  }
+  .hero-proof {
+    list-style: none;
+    padding: 0;
+    margin-top: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 24px;
+    font-size: 0.9rem;
+    color: var(--ink-500);
+  }
+  .hero-proof li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hero-proof :global(svg) {
+    color: var(--brand-500);
+    flex: none;
+  }
+  .hero-proof strong {
+    display: block;
+    color: var(--ink-900);
+    font-weight: 600;
+  }
+
+  .hero-visual {
+    position: relative;
+    padding: 28px 0;
+  }
+  .tracker {
+    position: relative;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    padding: 26px;
+    box-shadow: var(--shadow-lg);
+    transform: rotate(-1.2deg);
+  }
+  .tr-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .tr-kicker {
+    font-size: 0.78rem;
+    color: var(--ink-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .tr-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--ink-900);
+    margin-top: 2px;
+  }
+  .live {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--mint);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .tr-bar {
+    margin-top: 18px;
+    height: 8px;
+    border-radius: 99px;
+    background: var(--sand-100);
+    overflow: hidden;
+  }
+  .tr-bar span {
+    display: block;
+    height: 100%;
+    width: 72%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--brand-500), #6d80f5);
+    transform-origin: left;
+    animation: grow 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .tr-steps {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+    display: grid;
+    gap: 2px;
+  }
+  .tr-steps li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 0;
+  }
+  .tr-steps li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 38px;
+    bottom: -12px;
+    width: 2px;
+    background: var(--line);
+  }
+  .tr-steps li.done:not(:last-child)::after {
+    background: var(--brand-200);
+  }
+  .dot {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--line-strong);
+    background: var(--white);
+    color: #fff;
+  }
+  .done .dot {
+    background: var(--brand-500);
+    border-color: var(--brand-500);
+  }
+  .active .dot {
+    border-color: var(--saffron);
+    box-shadow: 0 0 0 5px var(--saffron-soft);
+  }
+  .active .dot::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--saffron);
+  }
+  .tr-steps strong {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--ink-900);
+    font-weight: 600;
+  }
+  .tr-steps small {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--ink-500);
+  }
+  .tr-steps time {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink-400);
+  }
+  .tr-steps .active time {
+    color: #9a6200;
+  }
+  .tr-steps li:not(.done):not(.active) strong {
+    color: var(--ink-500);
+  }
+  .tr-msg {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 14px;
+    background: var(--mint-soft);
+    border-radius: 16px 16px 16px 4px;
+    font-size: 0.88rem;
+    color: #0d4f38;
+    line-height: 1.45;
+  }
+  .avatar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--mint);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  .chip {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ink-900);
+    box-shadow: var(--shadow);
+    animation: float 6s ease-in-out infinite;
+  }
+  .chip :global(svg) {
+    color: var(--brand-500);
+  }
+  .chip--a {
+    top: -2px;
+    right: -10px;
+  }
+  .chip--b {
+    bottom: 0;
+    left: -24px;
+    animation-delay: -3s;
+  }
+  @keyframes float {
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+  @keyframes pulse {
+    50% {
+      opacity: 0.35;
+    }
+  }
+  @keyframes grow {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  /* ---------- Administrations ---------- */
+  .admins {
+    border-block: 1px solid var(--line);
+    background: var(--white);
+  }
+  .admins-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 28px;
+    padding-block: 22px;
+  }
+  .admins p {
+    font-size: 0.9rem;
+    color: var(--ink-500);
+    font-weight: 500;
+  }
+  .admins ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 26px;
+  }
+  .admins li {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink-700);
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .night-pattern::before {
+    filter: brightness(2.4);
+    opacity: 0.08;
+  }
+  .night-lead {
+    color: #aab3d4;
+  }
+  .section--night :global(.eyebrow) {
+    color: var(--saffron);
+  }
+  .head-row {
+    display: flex;
+    max-width: none;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .faq-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: start;
+  }
+  .faq-grid .section-head {
+    position: sticky;
+    top: calc(var(--header-h) + 32px);
+  }
+  blockquote {
+    color: var(--ink-900);
+  }
+
+  @media (max-width: 960px) {
+    .hero-grid,
+    .faq-grid {
+      grid-template-columns: 1fr;
+    }
+    .faq-grid .section-head {
+      position: static;
+      margin-bottom: 0;
+    }
+    .hero-visual {
+      max-width: 520px;
+      margin-inline: auto;
+      width: 100%;
+    }
+    .chip--b {
+      left: -6px;
+    }
+    .chip--a {
+      right: -6px;
+    }
+  }
+  @media (max-width: 480px) {
+    .tracker {
+      padding: 20px;
+      transform: none;
+    }
+    .chip {
+      display: none;
+    }
+  }
+</style>

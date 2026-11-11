@@ -1,0 +1,275 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/PageHero.astro';
+import Packs from '../components/Packs.astro';
+import Steps from '../components/Steps.astro';
+import FAQ from '../components/FAQ.astro';
+import CityGrid from '../components/CityGrid.astro';
+import CTABand from '../components/CTABand.astro';
+import Icon from '../components/Icon.astro';
+import { cities, type City } from '../config/cities';
+import { site, catalog, packs, formatMAD, whatsappLink } from '../config/site';
+import { service, faq as faqSchema } from '../lib/schema';
+
+export function getStaticPaths() {
+  return cities.map((city) => ({ params: { city: city.slug }, props: { city } }));
+}
+
+const { city } = Astro.props as { city: City };
+const path = `/creation-societe-${city.slug}/`;
+const minPrice = catalog.creation['sarl-au'].price;
+const waText = `Bonjour, je souhaite créer une société ${city.prep}.`;
+
+const faqs = [
+  {
+    q: `Combien coûte la création d’une société ${city.prep} ?`,
+    a: `Notre prestation de création d’une SARL AU ${city.prep} commence à ${formatMAD(minPrice)} HT, avec un prix fixé avant le démarrage. Les packs incluant domiciliation et cachet commencent à ${formatMAD(packs[0].price)}. <a href="/tarifs/">Voir les tarifs</a>.`,
+  },
+  {
+    q: `Dois-je me rendre au ${city.tribunal} ?`,
+    a: `Non. Nous déposons votre dossier et suivons l’immatriculation pour vous. Selon le dossier, seule la légalisation de votre signature sur les statuts peut nécessiter un passage dans un bureau de légalisation proche de chez vous.`,
+  },
+  {
+    q: `Où établir le siège social de ma société ${city.prep} ?`,
+    a: city.domiciliation
+      ? `Vous pouvez utiliser votre propre local, ou notre <a href="/domiciliation-entreprise-maroc/">domiciliation ${city.prep}</a>, qui vous donne une adresse professionnelle et la réception de votre courrier dès ${formatMAD(catalog.domiciliationMonthlyFrom)} par mois.`
+      : `Votre siège peut être votre local commercial, un bureau loué ou un centre de domiciliation agréé ${city.prep}. Si vous n’avez pas encore d’adresse, nous vous orientons vers une solution adaptée.`,
+  },
+  {
+    q: `Quel est le délai pour créer une SARL ${city.prep} ?`,
+    a: `Comptez en moyenne ${site.delai} après réception d’un dossier complet. Le délai dépend notamment du traitement par le ${city.tribunal}.`,
+  },
+];
+
+const schema = [
+  service({
+    name: `Création de société ${city.prep}`,
+    description: `Création de SARL, SARL AU et auto-entrepreneur ${city.prep} : statuts, registre du commerce, IF, ICE, CNSS.`,
+    path,
+    price: minPrice,
+    area: city.name,
+  }),
+  faqSchema(faqs),
+];
+
+const steps = [
+  { title: 'Échange et conseil', text: 'Forme juridique, capital, objet social : nous cadrons votre projet par téléphone ou WhatsApp.', meta: 'Jour 1' },
+  { title: 'Nom et statuts', text: 'Certificat négatif auprès de l’OMPIC, puis rédaction des statuts que vous validez.', meta: 'Jours 1-3' },
+  { title: 'Impôts et CNSS', text: 'Enregistrement, taxe professionnelle, IF, ICE et affiliation à la CNSS.', meta: 'Jours 3-6' },
+  { title: 'Immatriculation', text: `Dépôt et suivi au ${city.tribunal}, puis annonce légale.`, meta: site.delai },
+];
+---
+
+<BaseLayout
+  title={`Création de Société ${city.prep} dès ${formatMAD(minPrice)}`}
+  description={`Créez votre SARL ou SARL AU ${city.prep} sans vous déplacer : statuts, RC, IF, ICE et CNSS inclus. Prix fixe dès ${formatMAD(minPrice)}, immatriculation en ${site.delai}.`}
+  breadcrumbs={[{ name: `Création de société ${city.prep}`, href: path }]}
+  schema={schema}
+  waText={waText}>
+  <PageHero
+    eyebrow={`Région ${city.region}`}
+    title={`Création de société <span class="hl">${city.prep}</span>`}
+    lead={city.intro}
+    breadcrumbs={[{ name: `Création de société ${city.prep}`, href: path }]}
+    points={['Prix fixe affiché', 'Démarches à distance', `Immatriculation au ${city.tribunal.replace('Tribunal de commerce', 'tribunal')}`]}>
+    <Fragment slot="actions">
+      <a class="btn btn--primary" href={whatsappLink(waText)} target="_blank" rel="noopener"><Icon name="whatsapp" />Démarrer sur WhatsApp</a>
+      <a class="btn btn--ghost" href="/tarifs/#simulateur">Calculer mon prix</a>
+    </Fragment>
+    <aside slot="aside" class="facts" aria-label={`Informations pratiques ${city.prep}`}>
+      <p class="facts-title">L’essentiel {city.prep}</p>
+      <dl>
+        <div><dt><Icon name="building" size={18} />Registre du commerce</dt><dd>{city.tribunal}</dd></div>
+        <div><dt><Icon name="route" size={18} />Investissement</dt><dd>{city.cri}</dd></div>
+        <div><dt><Icon name="tag" size={18} />Création SARL AU</dt><dd>dès {formatMAD(minPrice)} HT</dd></div>
+        <div><dt><Icon name="clock" size={18} />Délai moyen</dt><dd>{site.delai}</dd></div>
+      </dl>
+    </aside>
+  </PageHero>
+
+  <section class="section">
+    <div class="container local-grid">
+      <article class="prose">
+        <h2>Créer son entreprise {city.prep} : ce qu’il faut savoir</h2>
+        <p>{city.local}</p>
+
+        <h3>Les quartiers d’affaires</h3>
+        <p>
+          Pour installer votre siège ou vos bureaux {city.prep}, les adresses les plus recherchées se situent dans les
+          secteurs suivants : {city.districts.slice(0, -1).join(', ')} et {city.districts.at(-1)}.
+        </p>
+
+        <h3>Les secteurs porteurs</h3>
+        <p>
+          Nous accompagnons des créateurs dans tous les domaines. {city.prep[0].toUpperCase() + city.prep.slice(1)}, les
+          projets les plus fréquents concernent : {city.sectors.map((s) => s.toLowerCase()).join(', ')}.
+        </p>
+
+        <h3>Quelle forme juridique choisir ?</h3>
+        <p>
+          Seul, la <a href="/creation-sarl-au-maroc/">SARL AU</a> est la forme la plus utilisée : elle protège votre
+          patrimoine et rassure clients et banques. À plusieurs, optez pour la <a href="/creation-sarl-maroc/">SARL</a>.
+          Pour tester une activité avec peu de frais, le statut d’<a href="/auto-entrepreneur-maroc/">auto-entrepreneur</a>
+          peut suffire au démarrage.
+        </p>
+
+        <h3>Le siège social</h3>
+        {
+          city.domiciliation ? (
+            <p>
+              Pas encore de local ? Notre <a href="/domiciliation-entreprise-maroc/">domiciliation {city.prep}</a> vous
+              donne une adresse de siège social, l’attestation nécessaire à l’immatriculation et la réception de votre
+              courrier, dès {formatMAD(catalog.domiciliationMonthlyFrom)} par mois.
+            </p>
+          ) : (
+            <p>
+              Votre siège peut être votre local commercial, un bureau loué ou un centre de domiciliation agréé {city.prep}.
+              Si votre activité ne nécessite pas de présence locale, vous pouvez aussi choisir notre{' '}
+              <a href="/domiciliation-entreprise-maroc/">domiciliation à Casablanca</a> : votre société sera alors
+              immatriculée au tribunal de commerce de Casablanca.
+            </p>
+          )
+        }
+      </article>
+
+      <aside class="local-side">
+        <div class="card">
+          <p class="side-title">Secteurs porteurs</p>
+          <ul class="tags">{city.sectors.map((s) => <li>{s}</li>)}</ul>
+        </div>
+        <div class="card">
+          <p class="side-title">Nous intervenons aussi à</p>
+          <ul class="tags">{city.nearby.map((s) => <li>{s}</li>)}</ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Les étapes</p>
+        <h2>Votre société {city.prep} en 4 étapes</h2>
+      </div>
+      <Steps steps={steps} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head section-head--center">
+        <p class="eyebrow">Tarifs</p>
+        <h2>Nos packs de création</h2>
+      </div>
+      <Packs />
+    </div>
+  </section>
+
+  <section class="section section--alt">
+    <div class="container container--narrow">
+      <div class="section-head section-head--center">
+        <p class="eyebrow">FAQ</p>
+        <h2>Créer une société {city.prep} : vos questions</h2>
+      </div>
+      <FAQ items={faqs} />
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Autres villes</p>
+        <h2>Nous créons aussi votre société à</h2>
+      </div>
+      <CityGrid exclude={city.slug} />
+    </div>
+  </section>
+
+  <CTABand title={`Votre société ${city.prep}, sans vous déplacer`} waText={waText} />
+</BaseLayout>
+
+<style>
+  .facts {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 26px;
+    box-shadow: var(--shadow-lg);
+  }
+  .facts-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--ink-900);
+  }
+  dl {
+    margin-top: 16px;
+    display: grid;
+  }
+  dl div {
+    padding: 13px 0;
+    border-top: 1px solid var(--line);
+  }
+  dt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--ink-500);
+    font-weight: 500;
+  }
+  dt :global(svg) {
+    color: var(--brand-500);
+  }
+  dd {
+    margin: 4px 0 0 26px;
+    font-weight: 600;
+    color: var(--ink-900);
+  }
+  .local-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: clamp(32px, 5vw, 72px);
+    align-items: start;
+  }
+  .prose {
+    max-width: 760px;
+  }
+  .prose h2 {
+    margin-top: 0;
+  }
+  .local-side {
+    display: grid;
+    gap: 16px;
+    position: sticky;
+    top: calc(var(--header-h) + 24px);
+  }
+  .side-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--ink-900);
+    margin-bottom: 14px;
+  }
+  .tags {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tags li {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--sand-100);
+    font-size: 0.86rem;
+    color: var(--ink-700);
+  }
+  @media (max-width: 960px) {
+    .local-grid {
+      grid-template-columns: 1fr;
+    }
+    .local-side {
+      position: static;
+    }
+  }
+</style>

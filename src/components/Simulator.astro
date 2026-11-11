@@ -1,0 +1,483 @@
+---
+import Icon from './Icon.astro';
+import { catalog, site, whatsappLink, type CreationForm } from '../config/site';
+import { estimate, comptaPrice, formatMAD } from '../lib/pricing';
+
+const forms = Object.entries(catalog.creation) as [CreationForm, (typeof catalog.creation)[CreationForm]][];
+const formDesc: Record<CreationForm, string> = {
+  'sarl-au': 'Vous créez seul',
+  sarl: 'De 2 à 50 associés',
+  sas: 'Statuts plus flexibles',
+  ae: 'Activité individuelle',
+};
+const domOptions = [0, ...Object.keys(catalog.domiciliation).map(Number)];
+const comptaOptions = [0, ...Object.keys(catalog.comptabilite).map(Number)];
+const extras = Object.entries(catalog.extras).filter(([, e]) => e.price > 0) as [
+  keyof typeof catalog.extras,
+  { label: string; price: number },
+][];
+
+// État initial rendu côté serveur (fonctionne sans JavaScript)
+const initial = estimate({ form: 'sarl-au', dom: 12, compta: 0, extras: ['cachet'] });
+---
+
+<div class="sim" data-sim>
+  <form class="sim-form" onsubmit="return false">
+    <fieldset>
+      <legend><span class="num">1</span>Forme juridique</legend>
+      <div class="opt-grid">
+        {
+          forms.map(([id, f]) => (
+            <label class="opt">
+              <input type="radio" name="form" value={id} checked={id === 'sarl-au'} />
+              <span class="opt-body">
+                <strong>{f.short}</strong>
+                <small>{formDesc[id]}</small>
+                <em>{formatMAD(f.price)}</em>
+              </span>
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+
+    <fieldset data-dom>
+      <legend><span class="num">2</span>Domiciliation du siège social</legend>
+      <div class="seg">
+        {
+          domOptions.map((m) => (
+            <label class="seg-opt">
+              <input type="radio" name="dom" value={m} checked={m === 12} />
+              <span>
+                {m === 0 ? 'Aucune' : `${m} mois`}
+                <small>{m === 0 ? 'J’ai un local' : formatMAD(catalog.domiciliation[m])}</small>
+              </span>
+            </label>
+          ))
+        }
+      </div>
+      <p class="hint" data-dom-hint hidden>
+        <Icon name="info" size={16} />Un auto-entrepreneur peut déclarer son adresse personnelle : pas besoin de domiciliation.
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="num">3</span>Comptabilité et déclarations</legend>
+      <div class="seg">
+        {
+          comptaOptions.map((m) => (
+            <label class="seg-opt">
+              <input type="radio" name="compta" value={m} checked={m === 0} />
+              <span>
+                {m === 0 ? 'Plus tard' : `${m} mois`}
+                <small data-compta-price={m}>{m === 0 ? '—' : formatMAD(comptaPrice('sarl-au', m))}</small>
+              </span>
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="num">4</span>Options</legend>
+      <div class="checks">
+        {
+          extras.map(([id, e]) => (
+            <label class="check">
+              <input type="checkbox" name="extras" value={id} checked={id === 'cachet'} />
+              <span class="box" aria-hidden="true">
+                <Icon name="check" size={14} />
+              </span>
+              <span>{e.label}</span>
+              <em>+ {formatMAD(e.price)}</em>
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+  </form>
+
+  <aside class="sim-summary" aria-live="polite">
+    <p class="sum-title">Votre estimation</p>
+    <ul class="sum-lines" data-lines>
+      {
+        initial.lines.map((l) => (
+          <li>
+            <span>{l.label}</span>
+            <span>{formatMAD(l.price)}</span>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="sum-total">
+      <span>Total HT</span>
+      <strong data-total>{formatMAD(initial.total)}</strong>
+    </div>
+    <div class="sum-pack" data-pack hidden={!initial.pack}>
+      <Icon name="tag" size={18} />
+      <span>
+        {
+          initial.pack && (
+            <>
+              Le <strong>pack {initial.pack.name}</strong> couvre votre sélection pour {formatMAD(initial.pack.price)},
+              soit {formatMAD(initial.pack.saving)} d’économie.
+            </>
+          )
+        }
+      </span>
+    </div>
+    <a class="btn btn--wa btn--block" data-wa href={whatsappLink()} target="_blank" rel="noopener">
+      <Icon name="whatsapp" />
+      Recevoir ce devis sur WhatsApp
+    </a>
+    <a class="btn btn--outline-light btn--block btn--sm" href="/contact/">Être rappelé gratuitement</a>
+    <p class="sum-note">{site.priceNote}. Devis définitif confirmé par un conseiller.</p>
+  </aside>
+</div>
+
+<script>
+  import { estimate, comptaPrice, formatMAD } from '../lib/pricing';
+  import { whatsappLink, type CreationForm, type ExtraId } from '../config/site';
+
+  document.querySelectorAll<HTMLElement>('[data-sim]').forEach((root) => {
+    const form = root.querySelector('form')!;
+    const lines = root.querySelector('[data-lines]')!;
+    const total = root.querySelector('[data-total]')!;
+    const packBox = root.querySelector<HTMLElement>('[data-pack]')!;
+    const wa = root.querySelector<HTMLAnchorElement>('[data-wa]')!;
+    const domSet = root.querySelector<HTMLFieldSetElement>('[data-dom]')!;
+    const domHint = root.querySelector<HTMLElement>('[data-dom-hint]')!;
+
+    const update = () => {
+      const fd = new FormData(form);
+      const f = fd.get('form') as CreationForm;
+      const isAE = f === 'ae';
+      domSet.disabled = isAE;
+      domHint.hidden = !isAE;
+      root.querySelectorAll<HTMLElement>('[data-compta-price]').forEach((el) => {
+        const m = Number(el.dataset.comptaPrice);
+        el.textContent = m ? formatMAD(comptaPrice(f, m)) : '—';
+      });
+
+      const sel = {
+        form: f,
+        dom: isAE ? 0 : Number(fd.get('dom')),
+        compta: Number(fd.get('compta')),
+        extras: fd.getAll('extras') as ExtraId[],
+      };
+      const est = estimate(sel);
+
+      lines.innerHTML = '';
+      for (const l of est.lines) {
+        const li = document.createElement('li');
+        const a = document.createElement('span');
+        const b = document.createElement('span');
+        a.textContent = l.label;
+        b.textContent = formatMAD(l.price);
+        li.append(a, b);
+        lines.append(li);
+      }
+      total.textContent = formatMAD(est.total);
+
+      if (est.pack) {
+        packBox.hidden = false;
+        packBox.querySelector('span')!.innerHTML =
+          `Le <strong>pack ${est.pack.name}</strong> couvre votre sélection pour ${formatMAD(est.pack.price)}, soit ${formatMAD(est.pack.saving)} d’économie.`;
+      } else packBox.hidden = true;
+
+      const msg = [
+        'Bonjour, voici ma simulation sur masociete.ma :',
+        ...est.lines.map((l) => `• ${l.label} : ${formatMAD(l.price)}`),
+        `Total estimé : ${formatMAD(est.total)} HT`,
+        est.pack ? `(Pack ${est.pack.name} proposé à ${formatMAD(est.pack.price)})` : '',
+        'Pouvez-vous me confirmer le devis ?',
+      ]
+        .filter(Boolean)
+        .join('\n');
+      wa.href = whatsappLink(msg);
+    };
+
+    form.addEventListener('change', update);
+    update();
+  });
+</script>
+
+<style>
+  .sim {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .sim-form {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: clamp(20px, 3vw, 32px);
+    display: grid;
+    gap: 28px;
+  }
+  fieldset {
+    border: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  fieldset[disabled] .seg {
+    opacity: 0.45;
+  }
+  legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--ink-900);
+    margin-bottom: 14px;
+  }
+  .num {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--brand-50);
+    color: var(--brand-600);
+    font-size: 0.85rem;
+    font-family: var(--font-body);
+    font-weight: 700;
+  }
+  input[type='radio'],
+  input[type='checkbox'] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .opt-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .opt {
+    position: relative;
+    cursor: pointer;
+  }
+  .opt-body {
+    display: grid;
+    gap: 2px;
+    height: 100%;
+    padding: 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  }
+  .opt-body strong {
+    color: var(--ink-900);
+    font-size: 0.98rem;
+  }
+  .opt-body small {
+    color: var(--ink-500);
+    font-size: 0.8rem;
+    line-height: 1.35;
+  }
+  .opt-body em {
+    margin-top: 6px;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 0.86rem;
+    color: var(--brand-600);
+  }
+  .opt:hover .opt-body {
+    border-color: var(--brand-200);
+  }
+  .opt input:checked + .opt-body {
+    border-color: var(--brand-500);
+    background: var(--brand-50);
+    box-shadow: 0 0 0 3px rgb(48 73 224 / 0.12);
+  }
+  .opt input:focus-visible + .opt-body,
+  .seg-opt input:focus-visible + span,
+  .check input:focus-visible ~ .box {
+    outline: 3px solid var(--brand-500);
+    outline-offset: 2px;
+  }
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    padding: 5px;
+    background: var(--sand-100);
+    border-radius: 16px;
+  }
+  .seg-opt {
+    position: relative;
+    cursor: pointer;
+  }
+  .seg-opt span {
+    display: grid;
+    text-align: center;
+    padding: 10px 6px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.93rem;
+    color: var(--ink-700);
+    transition: background-color 0.15s, box-shadow 0.15s;
+  }
+  .seg-opt small {
+    font-weight: 500;
+    font-size: 0.78rem;
+    color: var(--ink-500);
+  }
+  .seg-opt input:checked + span {
+    background: var(--white);
+    color: var(--ink-900);
+    box-shadow: var(--shadow-sm), 0 0 0 1.5px var(--brand-500);
+  }
+  fieldset[disabled] .seg-opt {
+    cursor: not-allowed;
+  }
+  .hint {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 0.88rem;
+    color: var(--ink-500);
+  }
+  .hint :global(svg) {
+    flex: none;
+    margin-top: 3px;
+  }
+  .checks {
+    display: grid;
+    gap: 10px;
+  }
+  .check {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    cursor: pointer;
+    font-weight: 550;
+    color: var(--ink-900);
+  }
+  .check em {
+    margin-left: auto;
+    font-style: normal;
+    color: var(--ink-500);
+    font-weight: 500;
+    font-size: 0.92rem;
+  }
+  .box {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 1.5px solid var(--line-strong);
+    color: transparent;
+    flex: none;
+    transition: all 0.15s;
+  }
+  .check input:checked ~ .box {
+    background: var(--brand-500);
+    border-color: var(--brand-500);
+    color: #fff;
+  }
+  .check:has(input:checked) {
+    border-color: var(--brand-200);
+    background: var(--brand-50);
+  }
+
+  .sim-summary {
+    position: sticky;
+    top: calc(var(--header-h) + 20px);
+    background: var(--night);
+    color: #c9d0ea;
+    border-radius: var(--radius-lg);
+    padding: clamp(22px, 3vw, 30px);
+    display: grid;
+    gap: 14px;
+    box-shadow: var(--shadow-lg);
+  }
+  .sum-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: #fff;
+    font-size: 1.15rem;
+  }
+  .sum-lines {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+    font-size: 0.95rem;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed rgb(255 255 255 / 0.18);
+  }
+  .sum-lines :global(li) {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .sum-lines :global(li span:last-child) {
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .sum-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .sum-total strong {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    letter-spacing: -0.03em;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .sum-pack {
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgb(240 169 59 / 0.14);
+    color: #ffe2b0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+  .sum-pack[hidden] {
+    display: none;
+  }
+  .sum-pack :global(svg) {
+    flex: none;
+    color: var(--saffron);
+    margin-top: 2px;
+  }
+  .sum-pack strong {
+    color: #fff;
+  }
+  .sum-note {
+    font-size: 0.8rem;
+    color: #8f99c0;
+    text-align: center;
+  }
+
+  @media (max-width: 1023px) {
+    .sim {
+      grid-template-columns: 1fr;
+    }
+    .sim-summary {
+      position: static;
+    }
+  }
+  @media (max-width: 640px) {
+    .opt-grid,
+    .seg {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

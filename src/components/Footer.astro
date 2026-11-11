@@ -1,0 +1,155 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { site, whatsappLink } from '../config/site';
+import { creationLinks, serviceLinks } from '../config/nav';
+import { cities } from '../config/cities';
+
+const year = new Date().getFullYear();
+const socials = Object.entries(site.social).filter(([, v]) => v);
+---
+
+<footer class="site-footer pattern-bg">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/"><Logo tone="light" /></a>
+        <p>
+          Création de société, domiciliation et comptabilité au Maroc. Un seul interlocuteur, des prix affichés, aucun
+          déplacement.
+        </p>
+        <ul class="footer-contact">
+          <li><Icon name="phone" size={18} /><a href={`tel:${site.phoneE164}`}>{site.phoneDisplay}</a></li>
+          <li><Icon name="whatsapp" size={18} /><a href={whatsappLink()} rel="noopener" target="_blank">WhatsApp</a></li>
+          <li><Icon name="mail" size={18} /><a href={`mailto:${site.email}`}>{site.email}</a></li>
+          <li><Icon name="pin" size={18} /><span>{site.address.street}, {site.address.city}</span></li>
+        </ul>
+      </div>
+
+      <nav aria-label="Création d'entreprise">
+        <p class="footer-title">Création</p>
+        <ul>
+          {creationLinks.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+          <li><a href="/tarifs/">Tarifs et packs</a></li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Services">
+        <p class="footer-title">Services</p>
+        <ul>
+          {serviceLinks.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+          <li><a href="/guides/">Guides pratiques</a></li>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+        </ul>
+      </nav>
+
+      <nav aria-label="Villes">
+        <p class="footer-title">Villes</p>
+        <ul>
+          {cities.map((c) => <li><a href={`/creation-societe-${c.slug}/`}>Création de société {c.prep}</a></li>)}
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© {year} {site.name} · {site.legalName}{site.legal.ice && ` · ICE ${site.legal.ice}`}. Tous droits réservés.</p>
+      <ul>
+        <li><a href="/a-propos/">À propos</a></li>
+        <li><a href="/contact/">Contact</a></li>
+        <li><a href="/mentions-legales/">Mentions légales</a></li>
+        <li><a href="/politique-de-confidentialite/">Confidentialité</a></li>
+        {socials.map(([k, v]) => <li><a href={v} rel="noopener" target="_blank">{k[0].toUpperCase() + k.slice(1)}</a></li>)}
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--night);
+    color: #aab3d4;
+    padding: clamp(56px, 7vw, 88px) 0 28px;
+    font-size: 0.95rem;
+  }
+  .site-footer::before {
+    filter: brightness(2.4);
+    opacity: 0.07;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+    gap: 40px;
+  }
+  .footer-brand p {
+    margin-top: 18px;
+    max-width: 340px;
+    line-height: 1.6;
+  }
+  .footer-contact {
+    list-style: none;
+    padding: 0;
+    margin-top: 22px;
+    display: grid;
+    gap: 10px;
+  }
+  .footer-contact li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .footer-contact :global(svg) {
+    color: var(--saffron);
+    flex: none;
+  }
+  .footer-title {
+    font-family: var(--font-display);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.02rem;
+    margin-bottom: 16px;
+  }
+  nav ul,
+  .footer-bottom ul {
+    list-style: none;
+    padding: 0;
+  }
+  nav li + li {
+    margin-top: 9px;
+  }
+  .site-footer a {
+    color: #c9d0ea;
+    text-decoration: none;
+  }
+  .site-footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+  }
+  .footer-bottom {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    justify-content: space-between;
+    font-size: 0.875rem;
+  }
+  .footer-bottom ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+  @media (max-width: 900px) {
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 520px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

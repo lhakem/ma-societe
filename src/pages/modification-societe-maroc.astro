@@ -1,0 +1,104 @@
+---
+import ServiceLayout from '../layouts/ServiceLayout.astro';
+import { catalog, site, formatMAD } from '../config/site';
+
+const path = '/modification-societe-maroc/';
+
+const faqs = [
+  {
+    q: 'Combien de temps prend une modification de statuts ?',
+    a: 'En général, une à trois semaines selon l’opération et le tribunal de commerce : rédaction des actes, enregistrement, dépôt au greffe, annonce légale et mise à jour du registre du commerce.',
+  },
+  {
+    q: 'Faut-il réunir une assemblée générale ?',
+    a: 'Oui pour la plupart des modifications de statuts (transfert de siège, augmentation de capital, changement de nom). Dans une SARL AU, c’est l’associé unique qui prend la décision par écrit. Nous rédigeons les procès-verbaux.',
+  },
+  {
+    q: 'Une cession de parts entraîne-t-elle des frais d’enregistrement ?',
+    a: 'Oui, des droits d’enregistrement sont dus sur le prix de cession des parts sociales. Nous vous indiquons le montant exact dans notre devis, avant de démarrer.',
+  },
+  {
+    q: 'Comment fermer une société au Maroc ?',
+    a: 'Une fermeture amiable se fait en deux temps : la dissolution anticipée, qui ouvre la liquidation et nomme un liquidateur, puis la clôture de la liquidation, qui permet la radiation du registre du commerce. Les déclarations fiscales doivent être à jour.',
+  },
+];
+
+const ops = [
+  { t: 'Transfert de siège social', d: 'Dans la même ville ou vers une autre ville, avec changement de tribunal si nécessaire.' },
+  { t: 'Cession de parts sociales', d: 'Entrée ou sortie d’un associé, transformation d’une SARL AU en SARL ou l’inverse.' },
+  { t: 'Changement de gérant', d: 'Nomination, démission ou révocation, et mise à jour des pouvoirs bancaires.' },
+  { t: 'Augmentation ou réduction de capital', d: 'Par apport nouveau, incorporation de réserves ou réduction.' },
+  { t: 'Changement de dénomination', d: 'Nouveau certificat négatif et mise à jour de tous les registres.' },
+  { t: 'Modification de l’objet social', d: 'Ajout ou retrait d’activités pour suivre l’évolution de votre entreprise.' },
+  { t: 'Dissolution et liquidation', d: 'Fermeture amiable de la société jusqu’à la radiation du registre du commerce.' },
+];
+---
+
+<ServiceLayout
+  metaTitle={`Modification de Statuts et Dissolution de SARL | ${site.name}`}
+  metaDescription={`Transfert de siège, cession de parts, changement de gérant, augmentation de capital ou dissolution de SARL au Maroc. Actes rédigés et formalités dès ${formatMAD(catalog.modificationFrom)}.`}
+  path={path}
+  eyebrow="Vie de la société"
+  h1='Modifications juridiques <span class="hl">de votre société</span>'
+  lead="Votre entreprise évolue : nouvel associé, nouvelle adresse, nouveau gérant, nouvelles activités. Nous rédigeons les actes et accomplissons toutes les formalités jusqu’à la mise à jour du registre du commerce."
+  points={['Actes rédigés pour vous', 'Prix annoncé à l’avance', 'Partout au Maroc']}
+  crumbs={[{ name: 'Modifications juridiques', href: path }]}
+  serviceName="Modification de statuts et dissolution de société au Maroc"
+  price={catalog.modificationFrom}
+  priceLabel="Modification de statuts"
+  includes={[
+    'Procès-verbal de décision',
+    'Statuts mis à jour',
+    'Enregistrement et dépôt au greffe',
+    'Annonce légale',
+    'Registre du commerce modifié',
+  ]}
+  stepsTitle="Le déroulement d’une modification"
+  steps={[
+    { title: 'Analyse', text: 'Nous vérifions vos statuts actuels et les règles de majorité applicables.', meta: 'Jour 1' },
+    { title: 'Rédaction', text: 'Procès-verbal d’assemblée ou décision de l’associé unique, statuts mis à jour.', meta: 'Jours 1-3' },
+    { title: 'Formalités', text: 'Enregistrement, dépôt au greffe et publication de l’annonce légale.', meta: 'Jours 3-10' },
+    { title: 'Mise à jour', text: 'Registre du commerce modifié, et mise à jour auprès des impôts et de la CNSS si nécessaire.', meta: '1 à 3 semaines' },
+  ]}
+  faqs={faqs}
+  waText="Bonjour, je souhaite modifier les statuts de ma société.">
+  <h2>Les modifications que nous prenons en charge</h2>
+  <ul>
+    {ops.map((o) => <li><strong>{o.t}</strong> : {o.d}</li>)}
+  </ul>
+
+  <h2>Nos tarifs</h2>
+  <table>
+    <thead>
+      <tr><th>Opération</th><th>À partir de (HT)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Transfert de siège, changement de gérant, de nom ou d’objet</td><td>{formatMAD(catalog.modificationFrom)}</td></tr>
+      <tr><td>Cession de parts sociales</td><td>{formatMAD(catalog.modificationFrom)} + droits d’enregistrement</td></tr>
+      <tr><td>Augmentation ou réduction de capital</td><td>{formatMAD(catalog.modificationFrom)}</td></tr>
+      <tr><td>Dissolution et liquidation amiable</td><td>{formatMAD(catalog.dissolutionFrom)}</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Plusieurs modifications peuvent être regroupées dans une même décision : par exemple une cession de parts et un
+    changement de gérant. Le coût est alors réduit, car les formalités sont communes.
+  </p>
+
+  <h2>Fermer une société : dissolution et liquidation</h2>
+  <p>
+    Une société inactive continue de générer des obligations : déclarations, cotisation minimale après la période
+    d’exonération, pénalités en cas d’oubli. Si votre projet est terminé, mieux vaut la fermer proprement. La procédure
+    amiable comporte trois étapes :
+  </p>
+  <ol>
+    <li><strong>Dissolution anticipée</strong> : les associés décident de dissoudre la société et nomment un liquidateur.</li>
+    <li><strong>Liquidation</strong> : le liquidateur règle les dettes, encaisse les créances, puis établit les comptes de clôture.</li>
+    <li><strong>Radiation</strong> : la clôture de la liquidation est publiée et la société est radiée du registre du commerce.</li>
+  </ol>
+  <blockquote>
+    <p>
+      <strong>Avant de fermer :</strong> vérifiez que toutes vos déclarations fiscales et sociales sont à jour. Nous
+      faisons ce contrôle au début du dossier pour éviter les blocages.
+    </p>
+  </blockquote>
+</ServiceLayout>
