@@ -2,7 +2,7 @@
 
 - **Public website**: pre-rendered static pages served by Cloudflare (fast, SEO-friendly).
 - **Admin dashboard** at `/admin`: client tracking (suivi client), quotes (devis) and invoices (factures). Runs in a **Cloudflare Worker** with a **Cloudflare D1** database.
-- **Live**: https://masociete.lhakem3chine.workers.dev (Worker `masociete`, D1 `masociete`, secrets already set). Repo: https://github.com/lhakem/ma-societe
+- **Live**: https://ma-societe.lhakem3chine.workers.dev (Worker `ma-societe`, D1 `masociete`, secrets already set). Repo: https://github.com/lhakem/ma-societe
 
 ## Run it locally
 
@@ -26,8 +26,8 @@ Every push to `main` builds and deploys automatically.
    - Deploy command: `npx wrangler deploy`
    - (Non-production branches: `npx wrangler versions upload`)
 3. The **D1 database `masociete` is created automatically** on the first deploy (no ID to copy).
-4. Worker → **Settings → Variables and Secrets** → add 3 **secrets**: `ADMIN_EMAIL`, `ADMIN_PASSWORD` (10+ characters), `SESSION_SECRET` (32+ random characters). Use the same values as your `.env`, or new ones.
-5. Worker → **Settings → Domains & Routes** → add `masociete.ma` and `www.masociete.ma` (the domain must be on Cloudflare DNS).
+4. Worker `ma-societe` → **Settings → Variables and Secrets** → add 3 **secrets**: `ADMIN_EMAIL`, `ADMIN_PASSWORD` (10+ characters), `SESSION_SECRET` (32+ random characters). Use the same values as your `.env`, or new ones.
+5. Worker `ma-societe` → **Settings → Domains & Routes** → add `masociete.ma` and `www.masociete.ma` (the domain must be on Cloudflare DNS).
 
 Manual deploy from your computer (optional): `npm run deploy`.
 

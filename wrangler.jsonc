@@ -1,15 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "masociete",
+  // Doit correspondre au nom du Worker relié au dépôt GitHub dans Cloudflare
+  "name": "ma-societe",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Base de données de l'espace admin (clients, devis, factures).
-  // Pas de "database_id" : Cloudflare crée la base automatiquement au premier déploiement.
+  // Base de données de l'espace admin (clients, devis, factures)
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "masociete"
+      "database_name": "masociete",
+      "database_id": "2f57e41f-49a8-4dc9-861d-13f413f42ef4"
     }
   ],
 
